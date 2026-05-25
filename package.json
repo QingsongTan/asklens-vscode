@@ -1,0 +1,51 @@
+{
+  "name": "ask-anytime",
+  "displayName": "Ask Anytime",
+  "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
+  "version": "0.0.1",
+  "publisher": "tanqs",
+  "engines": { "vscode": "^1.95.0" },
+  "main": "./dist/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      { "command": "ask-anytime.explainSelection", "title": "Ask Anytime: 解释选中文本" },
+      { "command": "ask-anytime.uninstallHook", "title": "Ask Anytime: 移除 SessionStart hook" }
+    ],
+    "keybindings": [
+      { "command": "ask-anytime.explainSelection", "key": "ctrl+shift+a", "mac": "cmd+shift+a", "when": "editorHasSelection" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "ask-anytime", "title": "Ask Anytime", "icon": "$(comment-discussion)" }
+      ]
+    },
+    "views": {
+      "ask-anytime": [
+        { "id": "ask-anytime.annotations", "name": "批注", "type": "webview" }
+      ]
+    },
+    "configuration": {
+      "title": "Ask Anytime",
+      "properties": {
+        "ask-anytime.provider": { "type": "string", "enum": ["claude", "openai", "ollama"], "default": "claude" },
+        "ask-anytime.model": { "type": "string", "default": "claude-opus-4-7" }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
