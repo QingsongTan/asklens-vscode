@@ -62,4 +62,24 @@ describe('SessionTracker', () => {
     await tracker.init()
     expect(tracker.getCurrentSession()).toBeNull()
   })
+
+  it('fs.watch 回调 filename 为 null 时仍触发 refresh (跨平台兜底)', async () => {
+    let capturedCb: ((event: string, file: string | null) => void) | undefined
+    const fakeWatcher = { close: () => {} } as unknown as import('node:fs').FSWatcher
+    const fakeWatch = ((_p: unknown, cb: unknown) => {
+      capturedCb = cb as (event: string, file: string | null) => void
+      return fakeWatcher
+    }) as unknown as typeof import('node:fs').watch
+
+    tracker = new SessionTracker({ home, workspace: '/p', staleMs: 30_000, watchFn: fakeWatch })
+    await tracker.init()
+    expect(tracker.getCurrentSession()).toBeNull()
+
+    // 写入 hook 文件, 然后用 null filename 触发回调
+    writeFileSync(join(home, '.claude', '.ask_anytime_session.json'), JSON.stringify({
+      sessionId: 'via-null', transcriptPath: '/p/x.jsonl', cwd: '/p', updatedAt: Date.now(),
+    }))
+    capturedCb?.('change', null)
+    await vi.waitFor(() => expect(tracker.getCurrentSession()?.sessionId).toBe('via-null'), { timeout: 2000 })
+  })
 })

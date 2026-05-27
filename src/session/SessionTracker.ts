@@ -6,25 +6,28 @@ import { workspaceHash } from './workspaceHash'
 export type Session = { sessionId: string; transcriptPath: string; cwd: string }
 
 type Listener = (s: Session | null) => void
+type WatchFn = typeof watch
 
 export class SessionTracker {
   private current: Session | null = null
   private listeners: Listener[] = []
   private watcher?: FSWatcher
   private hookFile: string
+  private watchFn: WatchFn
 
-  constructor(private opts: { home: string; workspace: string; staleMs: number }) {
+  constructor(private opts: { home: string; workspace: string; staleMs: number; watchFn?: WatchFn }) {
     this.hookFile = join(opts.home, '.claude', '.ask_anytime_session.json')
+    this.watchFn = opts.watchFn ?? watch
   }
 
   async init(): Promise<void> {
     await this.refresh()
     try {
-      this.watcher = watch(join(this.opts.home, '.claude'), (_event, file) => {
-        if (file === '.ask_anytime_session.json') void this.refresh()
+      this.watcher = this.watchFn(join(this.opts.home, '.claude'), (_event, file) => {
+        if (file === null || file === '.ask_anytime_session.json') void this.refresh()
       })
-    } catch {
-      /* 目录不存在等情况无视 */
+    } catch (e) {
+      console.warn('[ask-anytime] 无法监听 .claude 目录, 会话感知将退化为仅启动时读取一次:', e)
     }
   }
 
