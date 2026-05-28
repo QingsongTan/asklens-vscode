@@ -20,11 +20,11 @@ export class OpenAIAdapter implements LLMAdapter {
       }),
     })
     if (!res.ok || !res.body) throw new Error(`OpenAI API ${res.status}`)
-    yield* parse(res.body)
+    yield* parseSse(res.body)
   }
 }
 
-async function* parse(body: ReadableStream<Uint8Array>): AsyncIterable<string> {
+async function* parseSse(body: ReadableStream<Uint8Array>): AsyncIterable<string> {
   const reader = body.getReader()
   const decoder = new TextDecoder()
   let buf = ''

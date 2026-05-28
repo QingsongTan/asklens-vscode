@@ -24,10 +24,19 @@ export async function run(): Promise<void> {
   editor.selection = new vscode.Selection(0, 0, 0, 12)
   await vscode.commands.executeCommand('ask-anytime.explainSelection')
 
-  await new Promise((r) => setTimeout(r, 1000))
   const ext = vscode.extensions.getExtension('tanqs.ask-anytime')!
   const api = ext.exports as { store: import('../../src/store/AnnotationStore').AnnotationStore }
-  const cards = api.store.get('sess1')
-  assert.strictEqual(cards.length, 1)
-  assert.strictEqual(cards[0].selectedText, 'retry policy')
+  try {
+    // 轮询最多 5 秒, 等待卡片入 store
+    const deadline = Date.now() + 5000
+    let cards = api.store.get('sess1')
+    while (cards.length === 0 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 100))
+      cards = api.store.get('sess1')
+    }
+    assert.strictEqual(cards.length, 1, 'cards.length should be 1, got ' + cards.length)
+    assert.strictEqual(cards[0].selectedText, 'retry policy')
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true })
+  }
 }
