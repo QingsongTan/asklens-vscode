@@ -33,6 +33,6 @@ describe('OllamaAdapter', () => {
       for await (const _ of adapter.explain({
         selectedText: 'x', conversation: [], followUps: [], modelId: 'm',
       })) {}
-    })()).rejects.toThrow(/Ollama.*未运行|无法连接/)
+    })()).rejects.toThrow(/无法连接到 Ollama/)
   })
 })

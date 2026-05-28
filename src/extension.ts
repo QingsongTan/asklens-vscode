@@ -60,7 +60,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     const modelId = cfg.get<string>('model', 'claude-opus-4-7')
     const cur = tracker.getCurrentSession()
     const conversation = cur
-      ? await buildContext(cur.transcriptPath, { maxTokens: 100_000 }).catch(() => [])
+      ? await buildContext(cur.transcriptPath, { maxTokens: 100_000 }).catch((e) => {
+          console.warn('[ask-anytime] 读取 Claude Code 会话日志失败, 将仅用选中文本解释:', e)
+          return []
+        })
       : []
     const card = store.findCard(cardId)
     if (!card) return

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { randomBytes } from 'node:crypto'
 import type { AnnotationStore } from '../store/AnnotationStore'
 import type { ExtToWeb, WebToExt } from './messages'
 
@@ -92,7 +93,5 @@ export class AnnotationViewProvider implements vscode.WebviewViewProvider {
 }
 
 function randomNonce(): string {
-  const arr = new Uint8Array(16)
-  for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256)
-  return [...arr].map((b) => b.toString(16).padStart(2, '0')).join('')
+  return randomBytes(16).toString('hex')
 }

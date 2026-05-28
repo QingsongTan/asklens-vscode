@@ -17,7 +17,8 @@ async function readSettings(home: string): Promise<Settings> {
   if (!existsSync(file)) return {}
   try {
     return JSON.parse(await readFile(file, 'utf8'))
-  } catch {
+  } catch (e) {
+    console.warn('[ask-anytime] 无法解析 ~/.claude/settings.json, 将以空配置覆盖写入(可能丢失用户配置):', e)
     return {}
   }
 }

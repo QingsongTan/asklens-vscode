@@ -79,6 +79,7 @@
     else if (m.kind === 'card-error') {
       const li = root.querySelector(`[data-id="${CSS.escape(m.cardId)}"]`)
       if (li) {
+        li.querySelector('.error')?.remove()
         const err = document.createElement('div')
         err.className = 'error'
         err.textContent = m.message
