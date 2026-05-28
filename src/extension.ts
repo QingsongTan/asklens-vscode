@@ -21,7 +21,8 @@ const SECRET_KEYS: Record<ProviderId, string> = {
 
 export async function activate(context: vscode.ExtensionContext): Promise<{ store: AnnotationStore; tracker: SessionTracker }> {
   const home = os.homedir()
-  const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? home
+  const getCurrentWorkspace = (): string =>
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? home
 
   const persister: Persister = {
     get: (k, d) => context.globalState.get(k, d),
@@ -29,7 +30,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
   }
   const store = new AnnotationStore(persister)
 
-  const tracker = new SessionTracker({ home, workspace, staleMs: 30_000 })
+  let tracker = new SessionTracker({ home, workspace: getCurrentWorkspace(), staleMs: 30_000 })
   await tracker.init()
 
   void ensureHookInstalled(context, home)
@@ -52,7 +53,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     vscode.window.registerWebviewViewProvider(AnnotationViewProvider.viewType, provider),
   )
 
-  tracker.onSessionChanged((s) => provider.setCurrentSession(s?.sessionId ?? NO_SESSION))
+  const attachTrackerListeners = (): void => {
+    tracker.onSessionChanged((s) => provider.setCurrentSession(s?.sessionId ?? NO_SESSION))
+  }
+  attachTrackerListeners()
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+      tracker.dispose()
+      tracker = new SessionTracker({ home, workspace: getCurrentWorkspace(), staleMs: 30_000 })
+      await tracker.init()
+      attachTrackerListeners()
+      provider.setCurrentSession(tracker.getCurrentSession()?.sessionId ?? NO_SESSION)
+    }),
+  )
 
   async function runExplain(cardId: string): Promise<void> {
     const cfg = vscode.workspace.getConfiguration('ask-anytime')
@@ -114,7 +128,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     }),
   )
 
-  return { store, tracker }
+  context.subscriptions.push({ dispose: () => tracker.dispose() })
+
+  return { store, get tracker() { return tracker } }
 }
 
 async function ensureHookInstalled(context: vscode.ExtensionContext, home: string): Promise<void> {
