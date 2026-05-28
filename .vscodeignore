@@ -1,5 +1,13 @@
 test/**
+dist-tests/**
+src/**
+!src/webview/media/**
 *.config.*
 tsconfig.json
 .git*
+.claude/**
+.vscode/**
 docs/**
+*.vsix
+node_modules/**
+.vscode-test/**
