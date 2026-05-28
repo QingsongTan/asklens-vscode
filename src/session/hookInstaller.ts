@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -51,4 +51,23 @@ export async function uninstallHook(opts: { home: string }): Promise<void> {
   if (!s.hooks?.SessionStart) return
   s.hooks.SessionStart = s.hooks.SessionStart.filter((h) => h.tag !== HOOK_TAG)
   await writeSettings(opts.home, s)
+}
+
+export const STABLE_HOOK_FILENAME = 'ask-anytime-hook.js'
+
+export function getStableHookPath(home: string): string {
+  return join(home, '.claude', STABLE_HOOK_FILENAME)
+}
+
+export async function copyHookScript(opts: { home: string; srcPath: string }): Promise<void> {
+  const { dir } = settingsPath(opts.home)
+  await mkdir(dir, { recursive: true })
+  await copyFile(opts.srcPath, getStableHookPath(opts.home))
+}
+
+export async function isHookInstalledAtPath(opts: { home: string; expectedScriptPath: string }): Promise<boolean> {
+  const s = await readSettings(opts.home)
+  return (s.hooks?.SessionStart ?? []).some(
+    (h) => h.tag === HOOK_TAG && h.command.includes(opts.expectedScriptPath),
+  )
 }

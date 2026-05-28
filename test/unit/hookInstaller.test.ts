@@ -63,4 +63,30 @@ describe('hookInstaller', () => {
     await installHook({ home, hookScriptPath: '/ext/hook/write_session.js' })
     expect(await isHookInstalled({ home })).toBe(true)
   })
+
+  it('copyHookScript: 把脚本复制到 ~/.claude/ask-anytime-hook.js', async () => {
+    const { copyHookScript, getStableHookPath } = await import('../../src/session/hookInstaller.js')
+    const src = join(home, 'src-hook.js')
+    writeFileSync(src, '// fake hook\n')
+    await copyHookScript({ home, srcPath: src })
+    const dst = getStableHookPath(home)
+    expect(dst).toBe(join(home, '.claude', 'ask-anytime-hook.js'))
+    expect(readFileSync(dst, 'utf8')).toBe('// fake hook\n')
+  })
+
+  it('copyHookScript: ~/.claude 不存在时自动创建', async () => {
+    const { copyHookScript } = await import('../../src/session/hookInstaller.js')
+    rmSync(join(home, '.claude'), { recursive: true, force: true })
+    const src = join(home, 'src-hook.js')
+    writeFileSync(src, 'x')
+    await copyHookScript({ home, srcPath: src })
+    expect(existsSync(join(home, '.claude', 'ask-anytime-hook.js'))).toBe(true)
+  })
+
+  it('isHookInstalledAtPath: 已装但命令路径不一致返回 false', async () => {
+    const { installHook, isHookInstalledAtPath } = await import('../../src/session/hookInstaller.js')
+    await installHook({ home, hookScriptPath: '/OLD/path/hook.js' })
+    expect(await isHookInstalledAtPath({ home, expectedScriptPath: '/NEW/path/hook.js' })).toBe(false)
+    expect(await isHookInstalledAtPath({ home, expectedScriptPath: '/OLD/path/hook.js' })).toBe(true)
+  })
 })

@@ -3,7 +3,7 @@ import * as path from 'node:path'
 import * as os from 'node:os'
 import { AnnotationStore, type Persister } from './store/AnnotationStore'
 import { SessionTracker } from './session/SessionTracker'
-import { installHook, uninstallHook, isHookInstalled } from './session/hookInstaller'
+import { installHook, uninstallHook, isHookInstalled, isHookInstalledAtPath, copyHookScript, getStableHookPath } from './session/hookInstaller'
 import { buildContext } from './context/ContextBuilder'
 import { LLMRouter } from './llm/LLMRouter'
 import { ClaudeAdapter } from './llm/ClaudeAdapter'
@@ -118,14 +118,34 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 }
 
 async function ensureHookInstalled(context: vscode.ExtensionContext, home: string): Promise<void> {
-  if (await isHookInstalled({ home })) return
+  // 1. 总是把最新版 hook 脚本复制到稳定路径 (相当于升级)
+  const srcPath = path.join(context.extensionPath, 'hook', 'write_session.js')
+  try {
+    await copyHookScript({ home, srcPath })
+  } catch (e) {
+    console.warn('[ask-anytime] 复制 hook 脚本到稳定路径失败:', e)
+  }
+
+  const stablePath = getStableHookPath(home)
+
+  // 2. 已装且路径正确 → 直接返回
+  if (await isHookInstalledAtPath({ home, expectedScriptPath: stablePath })) return
+
+  // 3. 已装但路径不是稳定路径 (旧版本残留) → 静默卸载旧条目, 准备装新的
+  if (await isHookInstalled({ home })) {
+    await uninstallHook({ home })
+    await installHook({ home, hookScriptPath: stablePath })
+    void vscode.window.showInformationMessage('Ask Anytime: 已更新 SessionStart hook 到稳定路径 (避免扩展升级后失效)')
+    return
+  }
+
+  // 4. 完全未装 → 询问用户是否安装
   const choice = await vscode.window.showInformationMessage(
     'Ask Anytime 需要在 ~/.claude/settings.json 安装一个 SessionStart hook 才能精准感知 Claude Code 会话。是否同意安装?',
     '安装', '使用兜底方案(不安装)',
   )
   if (choice === '安装') {
-    const script = path.join(context.extensionPath, 'hook', 'write_session.js')
-    await installHook({ home, hookScriptPath: script })
+    await installHook({ home, hookScriptPath: stablePath })
     void vscode.window.showInformationMessage('hook 已安装,可通过 "Ask Anytime: 移除 SessionStart hook" 卸载')
   }
 }
