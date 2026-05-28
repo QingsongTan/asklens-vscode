@@ -64,7 +64,8 @@ export class AnnotationViewProvider implements vscode.WebviewViewProvider {
 
   private renderCurrent(): void {
     if (!this.view) return
-    this.post({ kind: 'render', cards: this.store.get(this.currentSessionId()) })
+    const sid = this.currentSessionId()
+    this.post({ kind: 'render', cards: this.store.get(sid), currentSessionId: sid })
   }
 
   private post(msg: ExtToWeb): void {

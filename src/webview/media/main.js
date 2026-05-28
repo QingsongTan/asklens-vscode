@@ -2,9 +2,17 @@
   const vscode = acquireVsCodeApi()
   const root = document.getElementById('cards')
   const empty = document.getElementById('empty')
+  const status = document.getElementById('status')
   let cards = []
+  let currentSessionId = ''
+
+  function shortSid(sid) {
+    if (!sid || sid === '__none__') return '无会话'
+    return sid.length > 12 ? sid.slice(0, 8) + '…' : sid
+  }
 
   function render() {
+    status.textContent = `当前视图: ${shortSid(currentSessionId)} (${cards.length} 张卡片)`
     if (cards.length === 0) {
       empty.style.display = 'block'
       root.innerHTML = ''
@@ -25,6 +33,12 @@
     quote.className = 'quote'
     quote.textContent = c.selectedText
     header.appendChild(quote)
+
+    const badge = document.createElement('span')
+    badge.className = 'badge'
+    badge.textContent = shortSid(c.sessionId)
+    badge.title = c.sessionId
+    header.appendChild(badge)
 
     const actions = document.createElement('div')
     actions.className = 'actions'
@@ -80,7 +94,7 @@
 
   window.addEventListener('message', (ev) => {
     const m = ev.data
-    if (m.kind === 'render') { cards = m.cards; render() }
+    if (m.kind === 'render') { cards = m.cards; currentSessionId = m.currentSessionId ?? ''; render() }
     else if (m.kind === 'card-stream') {
       const li = root.querySelector(`[data-id="${CSS.escape(m.cardId)}"] .body .turn:last-child`)
       if (li) li.textContent = (li.textContent ?? '') + m.chunk

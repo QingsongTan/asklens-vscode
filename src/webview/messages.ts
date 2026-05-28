@@ -1,7 +1,7 @@
 import type { AnnotationCard } from '../store/AnnotationStore'
 
 export type ExtToWeb =
-  | { kind: 'render'; cards: AnnotationCard[] }
+  | { kind: 'render'; cards: AnnotationCard[]; currentSessionId: string }
   | { kind: 'card-stream'; cardId: string; chunk: string }
   | { kind: 'card-done'; cardId: string }
   | { kind: 'card-error'; cardId: string; message: string }
