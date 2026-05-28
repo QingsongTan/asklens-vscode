@@ -65,6 +65,16 @@
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit() })
     fu.append(input, send)
     li.appendChild(fu)
+    if (c.error) {
+      const err = document.createElement('div')
+      err.className = 'error'
+      err.textContent = c.error
+      const retry = document.createElement('button')
+      retry.textContent = '重试'
+      retry.addEventListener('click', () => vscode.postMessage({ kind: 'retry', cardId: c.id }))
+      err.appendChild(retry)
+      li.appendChild(err)
+    }
     return li
   }
 

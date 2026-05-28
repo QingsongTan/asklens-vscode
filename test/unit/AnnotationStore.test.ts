@@ -90,4 +90,12 @@ describe('AnnotationStore', () => {
     expect(store.findCard(c2.id)?.selectedText).toBe('b')
     expect(store.findCard('not-exist')).toBeUndefined()
   })
+
+  it('setError 写入与清除错误', async () => {
+    const c = await store.create({ sessionId: 's1', selectedText: 'x' })
+    await store.setError(c.id, '网络异常')
+    expect(store.findCard(c.id)?.error).toBe('网络异常')
+    await store.setError(c.id, null)
+    expect(store.findCard(c.id)?.error).toBeUndefined()
+  })
 })

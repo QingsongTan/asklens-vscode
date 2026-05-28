@@ -81,8 +81,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
       : []
     const card = store.findCard(cardId)
     if (!card) return
+    let full = ''
     try {
-      let full = ''
       for await (const chunk of router.explain(providerId, {
         selectedText: card.selectedText,
         conversation,
@@ -93,10 +93,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         provider.postStreamChunk(cardId, chunk)
       }
       await store.appendStreamChunk(cardId, full)
+      await store.setError(cardId, null)
       await store.finalizeCard(cardId)
       provider.postDone(cardId)
     } catch (e) {
-      provider.postError(cardId, (e as Error).message)
+      const msg = (e as Error).message
+      if (full) await store.appendStreamChunk(cardId, full)
+      await store.setError(cardId, msg)
+      provider.postError(cardId, msg)
     }
   }
 

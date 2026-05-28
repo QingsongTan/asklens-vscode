@@ -15,6 +15,7 @@ export type AnnotationCard = {
   explained: boolean
   resolved: boolean
   turns: Turn[]
+  error?: string
 }
 
 type StoreShape = { [sessionId: string]: AnnotationCard[] }
@@ -94,6 +95,13 @@ export class AnnotationStore {
   markResolved(cardId: string, resolved: boolean): Promise<void> {
     return this.mutate(cardId, (c) => {
       c.resolved = resolved
+    })
+  }
+
+  setError(cardId: string, error: string | null): Promise<void> {
+    return this.mutate(cardId, (c) => {
+      if (error === null) delete c.error
+      else c.error = error
     })
   }
 
