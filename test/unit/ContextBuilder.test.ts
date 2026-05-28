@@ -85,4 +85,30 @@ describe('ContextBuilder', () => {
   it('文件不存在抛错', async () => {
     await expect(buildContext(join(dir, 'nope.jsonl'), { maxTokens: 100 })).rejects.toThrow()
   })
+
+  it('大文件: 文件超阈值时只读尾部窗口, 丢弃可能不完整的首行', async () => {
+    // 构造 200 行 jsonl, 每行约 100 字节, 总约 20 KB; 用 1KB 阈值触发尾部读
+    const rows: object[] = []
+    for (let i = 0; i < 200; i++) {
+      rows.push({ type: 'user', message: { role: 'user', content: 'line-' + i + '-' + 'x'.repeat(80) } })
+    }
+    const p = join(dir, 'big.jsonl')
+    writeFileSync(p, rows.map((r) => JSON.stringify(r)).join('\n'))
+    // 用很小的 largeFileThreshold/tailWindow 触发尾部读
+    const msgs = await buildContext(p, { maxTokens: 1_000_000, largeFileThreshold: 1024, tailWindow: 2048 })
+    // 尾部窗口应包含若干行, 但绝对不包含 line-0
+    expect(msgs.length).toBeGreaterThan(0)
+    expect(msgs.length).toBeLessThan(200)
+    expect(msgs.some((m) => m.content.startsWith('line-199'))).toBe(true)  // 末尾保留
+    expect(msgs.some((m) => m.content.startsWith('line-0-'))).toBe(false)  // 开头丢弃
+  })
+
+  it('小文件: 阈值之内仍走全读, 行为不变', async () => {
+    const p = writeJsonl([
+      { type: 'user', message: { role: 'user', content: 'hi' } },
+      { type: 'assistant', message: { role: 'assistant', content: 'hello' } },
+    ])
+    const msgs = await buildContext(p, { maxTokens: 10_000, largeFileThreshold: 10_000 })
+    expect(msgs).toHaveLength(2)
+  })
 })
