@@ -133,9 +133,10 @@ async function ensureHookInstalled(context: vscode.ExtensionContext, home: strin
 async function buildRouter(context: vscode.ExtensionContext): Promise<LLMRouter> {
   const claudeKey = (await context.secrets.get(SECRET_KEYS.claude)) ?? ''
   const openaiKey = (await context.secrets.get(SECRET_KEYS.openai)) ?? ''
+  const ollamaBaseUrl = vscode.workspace.getConfiguration('ask-anytime').get<string>('ollama.baseUrl') || undefined
   return new LLMRouter({
     claude: new ClaudeAdapter({ apiKey: claudeKey }),
     openai: new OpenAIAdapter({ apiKey: openaiKey }),
-    ollama: new OllamaAdapter({}),
+    ollama: new OllamaAdapter({ baseUrl: ollamaBaseUrl }),
   })
 }
