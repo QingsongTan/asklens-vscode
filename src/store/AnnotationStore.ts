@@ -125,4 +125,8 @@ export class AnnotationStore {
     }
     return undefined
   }
+
+  allSessions(): string[] {
+    return Object.keys(this.read())
+  }
 }

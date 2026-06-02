@@ -10,7 +10,8 @@
   "contributes": {
     "commands": [
       { "command": "ask-anytime.explainSelection", "title": "Ask Anytime: 解释选中文本" },
-      { "command": "ask-anytime.uninstallHook", "title": "Ask Anytime: 移除 SessionStart hook" }
+      { "command": "ask-anytime.uninstallHook", "title": "Ask Anytime: 移除 SessionStart hook" },
+      { "command": "ask-anytime.exportKnowledge", "title": "Ask Anytime: 导出知识文档", "icon": "$(export)" }
     ],
     "keybindings": [
       { "command": "ask-anytime.explainSelection", "key": "ctrl+shift+a", "mac": "cmd+shift+a", "when": "editorHasSelection" }
@@ -23,6 +24,11 @@
     "views": {
       "ask-anytime": [
         { "id": "ask-anytime.annotations", "name": "批注", "type": "webview" }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        { "command": "ask-anytime.exportKnowledge", "when": "view == ask-anytime.annotations", "group": "navigation" }
       ]
     },
     "configuration": {

@@ -98,4 +98,12 @@ describe('AnnotationStore', () => {
     await store.setError(c.id, null)
     expect(store.findCard(c.id)?.error).toBeUndefined()
   })
+
+  it('allSessions 返回所有出现过的 sessionId', async () => {
+    expect(store.allSessions()).toEqual([])
+    await store.create({ sessionId: 's1', selectedText: 'a' })
+    await store.create({ sessionId: 's2', selectedText: 'b' })
+    await store.create({ sessionId: 's1', selectedText: 'c' })
+    expect(store.allSessions().sort()).toEqual(['s1', 's2'])
+  })
 })

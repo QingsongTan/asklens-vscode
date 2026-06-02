@@ -34,4 +34,27 @@ describe('LLMRouter', () => {
       for await (const _c of router.explain('unknown', { selectedText: 'x', conversation: [], followUps: [], modelId: 'm' })) {}
     })()).rejects.toThrow(/unknown provider/)
   })
+
+  it('chat 按 provider 路由到 adapter.chat', async () => {
+    let capturedMessages: unknown
+    let capturedModel: unknown
+    const adapter = {
+      explain: async function* () { /* not used */ },
+      chat: async function* (msgs: unknown, mid: unknown) {
+        capturedMessages = msgs
+        capturedModel = mid
+        yield 'X'
+      },
+    }
+    const router = new LLMRouter({
+      claude: adapter as never,
+      openai: fakeAdapter([]),
+      ollama: fakeAdapter([]),
+    })
+    const out: string[] = []
+    for await (const c of router.chat('claude', [{ role: 'user', content: 'hi' }], 'mid')) out.push(c)
+    expect(out.join('')).toBe('X')
+    expect(capturedMessages).toEqual([{ role: 'user', content: 'hi' }])
+    expect(capturedModel).toBe('mid')
+  })
 })

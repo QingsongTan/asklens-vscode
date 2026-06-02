@@ -12,6 +12,7 @@ import { OllamaAdapter } from './llm/OllamaAdapter'
 import type { ProviderId } from './llm/types'
 import { handleExplainSelection, NO_SESSION } from './capture/SelectionCapture'
 import { AnnotationViewProvider } from './webview/AnnotationViewProvider'
+import { handleExportKnowledge } from './exporter/exportCommand'
 
 const SECRET_KEYS: Record<ProviderId, string> = {
   claude: 'ask-anytime.claude.apiKey',
@@ -129,6 +130,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     vscode.commands.registerCommand('ask-anytime.uninstallHook', async () => {
       await uninstallHook({ home })
       void vscode.window.showInformationMessage('已移除 Ask Anytime 的 SessionStart hook')
+    }),
+    vscode.commands.registerCommand('ask-anytime.exportKnowledge', async () => {
+      const cfg = vscode.workspace.getConfiguration('ask-anytime')
+      await handleExportKnowledge({
+        store,
+        router,
+        getProvider: () => cfg.get<ProviderId>('provider', 'claude'),
+        getModelId: () => cfg.get<string>('model', 'claude-opus-4-7'),
+        getMaxTokens: () => 100_000,
+      })
     }),
   )
 
