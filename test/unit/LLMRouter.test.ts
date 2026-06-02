@@ -17,7 +17,7 @@ describe('LLMRouter', () => {
   it('按 provider 路由', async () => {
     const claude = fakeAdapter(['c1', 'c2'])
     const openai = fakeAdapter(['o1'])
-    const router = new LLMRouter({ claude, openai, ollama: fakeAdapter([]) })
+    const router = new LLMRouter({ claude, openai, ollama: fakeAdapter([]), deepseek: fakeAdapter([]) })
     const got: string[] = []
     for await (const c of router.explain('claude', {
       selectedText: 'x', conversation: [], followUps: [], modelId: 'm',
@@ -28,6 +28,7 @@ describe('LLMRouter', () => {
   it('未知 provider 抛错', async () => {
     const router = new LLMRouter({
       claude: fakeAdapter([]), openai: fakeAdapter([]), ollama: fakeAdapter([]),
+      deepseek: fakeAdapter([]),
     })
     await expect((async () => {
       // @ts-expect-error unknown provider
@@ -50,6 +51,7 @@ describe('LLMRouter', () => {
       claude: adapter as never,
       openai: fakeAdapter([]),
       ollama: fakeAdapter([]),
+      deepseek: fakeAdapter([]),
     })
     const out: string[] = []
     for await (const c of router.chat('claude', [{ role: 'user', content: 'hi' }], 'mid')) out.push(c)

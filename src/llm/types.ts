@@ -12,4 +12,4 @@ export interface LLMAdapter {
   chat(messages: Message[], modelId: string): AsyncIterable<string>
 }
 
-export type ProviderId = 'claude' | 'openai' | 'ollama'
+export type ProviderId = 'claude' | 'openai' | 'ollama' | 'deepseek'

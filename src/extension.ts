@@ -18,6 +18,7 @@ const SECRET_KEYS: Record<ProviderId, string> = {
   claude: 'ask-anytime.claude.apiKey',
   openai: 'ask-anytime.openai.apiKey',
   ollama: 'ask-anytime.ollama.apiKey',
+  deepseek: 'ask-anytime.deepseek.apiKey',
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<{ store: AnnotationStore; tracker: SessionTracker }> {
@@ -146,6 +147,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         [
           { label: 'Claude (Anthropic)', value: 'claude' as ProviderId, hint: 'sk-ant-...' },
           { label: 'OpenAI', value: 'openai' as ProviderId, hint: 'sk-...' },
+          { label: 'DeepSeek', value: 'deepseek' as ProviderId, hint: 'sk-...' },
         ],
         { title: 'Ask Anytime: 选择要配置 API key 的 Provider' },
       )
@@ -167,6 +169,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         [
           { label: 'Claude (Anthropic)', value: 'claude' as ProviderId },
           { label: 'OpenAI', value: 'openai' as ProviderId },
+          { label: 'DeepSeek', value: 'deepseek' as ProviderId },
         ],
         { title: 'Ask Anytime: 选择要清除 API key 的 Provider' },
       )
@@ -218,10 +221,14 @@ async function ensureHookInstalled(context: vscode.ExtensionContext, home: strin
 async function buildRouter(context: vscode.ExtensionContext): Promise<LLMRouter> {
   const claudeKey = (await context.secrets.get(SECRET_KEYS.claude)) ?? ''
   const openaiKey = (await context.secrets.get(SECRET_KEYS.openai)) ?? ''
-  const ollamaBaseUrl = vscode.workspace.getConfiguration('ask-anytime').get<string>('ollama.baseUrl') || undefined
+  const deepseekKey = (await context.secrets.get(SECRET_KEYS.deepseek)) ?? ''
+  const cfg = vscode.workspace.getConfiguration('ask-anytime')
+  const ollamaBaseUrl = cfg.get<string>('ollama.baseUrl') || undefined
+  const deepseekBaseUrl = cfg.get<string>('deepseek.baseUrl') || 'https://api.deepseek.com'
   return new LLMRouter({
     claude: new ClaudeAdapter({ apiKey: claudeKey }),
     openai: new OpenAIAdapter({ apiKey: openaiKey }),
     ollama: new OllamaAdapter({ baseUrl: ollamaBaseUrl }),
+    deepseek: new OpenAIAdapter({ apiKey: deepseekKey, baseUrl: deepseekBaseUrl }),
   })
 }

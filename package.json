@@ -36,12 +36,17 @@
     "configuration": {
       "title": "Ask Anytime",
       "properties": {
-        "ask-anytime.provider": { "type": "string", "enum": ["claude", "openai", "ollama"], "default": "claude" },
+        "ask-anytime.provider": { "type": "string", "enum": ["claude", "openai", "ollama", "deepseek"], "default": "claude" },
         "ask-anytime.model": { "type": "string", "default": "claude-opus-4-7" },
         "ask-anytime.ollama.baseUrl": {
           "type": "string",
           "default": "http://127.0.0.1:11434",
           "description": "Ollama 服务的 HTTP 地址, 远端部署时改这里"
+        },
+        "ask-anytime.deepseek.baseUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com",
+          "description": "DeepSeek API 基地址, 走中转/镜像时改这里"
         }
       }
     }

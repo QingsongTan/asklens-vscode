@@ -6,7 +6,7 @@
 ## 安装与使用
 
 1. 在 VSCode 扩展面板搜索 "Ask Anytime" 安装
-2. 在设置里选择 `ask-anytime.provider` (claude / openai / ollama) 与 `ask-anytime.model`
+2. 在设置里选择 `ask-anytime.provider` (claude / openai / ollama / deepseek) 与 `ask-anytime.model` (deepseek 推荐 `deepseek-chat` 或 `deepseek-reasoner`)
 3. 命令面板执行 `Ask Anytime: 设置 API key`, 选 provider 后输入 key (走 VSCode SecretStorage, 不进 settings.json); 用 Ollama 可跳过
 4. 第一次启动时按提示安装 SessionStart hook (推荐)
 5. 任意编辑器选中文字 → `Ctrl+Shift+A` 出卡片
@@ -21,9 +21,10 @@
 
 ## 设置项
 
-- `ask-anytime.provider`: AI 提供方 (`claude` / `openai` / `ollama`)
+- `ask-anytime.provider`: AI 提供方 (`claude` / `openai` / `ollama` / `deepseek`)
 - `ask-anytime.model`: 具体模型 ID
 - `ask-anytime.ollama.baseUrl`: Ollama 服务地址, 默认 `http://127.0.0.1:11434`, 远端部署时改这里
+- `ask-anytime.deepseek.baseUrl`: DeepSeek API 基地址, 默认 `https://api.deepseek.com`, 走中转/镜像时改这里
 
 ## 视图说明
 
