@@ -7,8 +7,17 @@
 
 1. 在 VSCode 扩展面板搜索 "Ask Anytime" 安装
 2. 在设置里选择 `ask-anytime.provider` (claude / openai / ollama) 与 `ask-anytime.model`
-3. 通过命令面板 `Ask Anytime: 设置 API key` (即将上线) 或编辑 secrets 配置 key
+3. 命令面板执行 `Ask Anytime: 设置 API key`, 选 provider 后输入 key (走 VSCode SecretStorage, 不进 settings.json); 用 Ollama 可跳过
 4. 第一次启动时按提示安装 SessionStart hook (推荐)
+5. 任意编辑器选中文字 → `Ctrl+Shift+A` 出卡片
+
+## 命令
+
+- `Ask Anytime: 解释选中文本` (`Ctrl+Shift+A` / `Cmd+Shift+A`)
+- `Ask Anytime: 导出知识文档` (侧栏右上 📤 按钮也可触发)
+- `Ask Anytime: 设置 API key` (Claude / OpenAI 各一份, Ollama 不需要)
+- `Ask Anytime: 清除 API key`
+- `Ask Anytime: 移除 SessionStart hook`
 
 ## 设置项
 

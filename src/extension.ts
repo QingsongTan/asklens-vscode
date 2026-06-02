@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 
   void ensureHookInstalled(context, home)
 
-  const router = await buildRouter(context)
+  let router = await buildRouter(context)
 
   const provider = new AnnotationViewProvider(
     context.extensionUri,
@@ -140,6 +140,40 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         getModelId: () => cfg.get<string>('model', 'claude-opus-4-7'),
         getMaxTokens: () => 100_000,
       })
+    }),
+    vscode.commands.registerCommand('ask-anytime.setApiKey', async () => {
+      const providerPick = await vscode.window.showQuickPick(
+        [
+          { label: 'Claude (Anthropic)', value: 'claude' as ProviderId, hint: 'sk-ant-...' },
+          { label: 'OpenAI', value: 'openai' as ProviderId, hint: 'sk-...' },
+        ],
+        { title: 'Ask Anytime: 选择要配置 API key 的 Provider' },
+      )
+      if (!providerPick) return
+      const key = await vscode.window.showInputBox({
+        title: `Ask Anytime: 输入 ${providerPick.label} API key`,
+        placeHolder: providerPick.hint,
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (v) => (v.trim().length === 0 ? '不能为空' : null),
+      })
+      if (!key) return
+      await context.secrets.store(SECRET_KEYS[providerPick.value], key.trim())
+      router = await buildRouter(context)
+      void vscode.window.showInformationMessage(`Ask Anytime: 已保存 ${providerPick.label} API key`)
+    }),
+    vscode.commands.registerCommand('ask-anytime.clearApiKey', async () => {
+      const providerPick = await vscode.window.showQuickPick(
+        [
+          { label: 'Claude (Anthropic)', value: 'claude' as ProviderId },
+          { label: 'OpenAI', value: 'openai' as ProviderId },
+        ],
+        { title: 'Ask Anytime: 选择要清除 API key 的 Provider' },
+      )
+      if (!providerPick) return
+      await context.secrets.delete(SECRET_KEYS[providerPick.value])
+      router = await buildRouter(context)
+      void vscode.window.showInformationMessage(`Ask Anytime: 已清除 ${providerPick.label} API key`)
     }),
   )
 

@@ -11,7 +11,9 @@
     "commands": [
       { "command": "ask-anytime.explainSelection", "title": "Ask Anytime: 解释选中文本" },
       { "command": "ask-anytime.uninstallHook", "title": "Ask Anytime: 移除 SessionStart hook" },
-      { "command": "ask-anytime.exportKnowledge", "title": "Ask Anytime: 导出知识文档", "icon": "$(export)" }
+      { "command": "ask-anytime.exportKnowledge", "title": "Ask Anytime: 导出知识文档", "icon": "$(export)" },
+      { "command": "ask-anytime.setApiKey", "title": "Ask Anytime: 设置 API key" },
+      { "command": "ask-anytime.clearApiKey", "title": "Ask Anytime: 清除 API key" }
     ],
     "keybindings": [
       { "command": "ask-anytime.explainSelection", "key": "ctrl+shift+a", "mac": "cmd+shift+a", "when": "editorHasSelection" }
