@@ -1,4 +1,4 @@
-import type { LLMAdapter, ExplainOptions } from './types'
+import type { LLMAdapter, ExplainOptions, Message } from './types'
 import { buildMessages } from './promptBuilder'
 import type { FetchFn } from './ClaudeAdapter'
 
@@ -6,6 +6,10 @@ export class OllamaAdapter implements LLMAdapter {
   constructor(private opts: { baseUrl?: string; fetchFn?: FetchFn }) {}
 
   async *explain(opts: ExplainOptions): AsyncIterable<string> {
+    yield* this.chat(buildMessages(opts), opts.modelId)
+  }
+
+  async *chat(messages: Message[], modelId: string): AsyncIterable<string> {
     const f = this.opts.fetchFn ?? fetch
     const url = (this.opts.baseUrl ?? 'http://127.0.0.1:11434') + '/api/chat'
     let res: Response
@@ -14,9 +18,9 @@ export class OllamaAdapter implements LLMAdapter {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          model: opts.modelId,
+          model: modelId,
           stream: true,
-          messages: buildMessages(opts).map((m) => ({ role: m.role, content: m.content })),
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       })
     } catch (e) {

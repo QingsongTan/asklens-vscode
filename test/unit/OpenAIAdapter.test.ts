@@ -25,4 +25,26 @@ describe('OpenAIAdapter', () => {
     })) chunks.push(c)
     expect(chunks.join('')).toBe('Hello')
   })
+
+  it('chat 直调: messages 原样作为 messages 字段透传', async () => {
+    const fetchFn = async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string)
+      expect(body.messages).toEqual([
+        { role: 'system', content: 'X' },
+        { role: 'user', content: 'Y' },
+      ])
+      expect(body.model).toBe('test-model')
+      return sseResponse([
+        'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
+        'data: [DONE]\n\n',
+      ])
+    }
+    const adapter = new OpenAIAdapter({ apiKey: 'k', fetchFn })
+    const chunks: string[] = []
+    for await (const c of adapter.chat(
+      [{ role: 'system', content: 'X' }, { role: 'user', content: 'Y' }],
+      'test-model',
+    )) chunks.push(c)
+    expect(chunks.join('')).toBe('ok')
+  })
 })

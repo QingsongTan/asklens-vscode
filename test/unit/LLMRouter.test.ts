@@ -7,6 +7,9 @@ function fakeAdapter(chunks: string[]): LLMAdapter {
     async *explain(_opts: ExplainOptions) {
       for (const c of chunks) yield c
     },
+    async *chat(_messages, _modelId) {
+      for (const c of chunks) yield c
+    },
   }
 }
 

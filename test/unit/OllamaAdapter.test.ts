@@ -35,4 +35,23 @@ describe('OllamaAdapter', () => {
       })) {}
     })()).rejects.toThrow(/无法连接到 Ollama/)
   })
+
+  it('chat 直调: messages map 后透传, modelId 用调用方传入的', async () => {
+    const fetchFn = async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string)
+      expect(body.messages).toEqual([{ role: 'user', content: 'hi' }])
+      expect(body.model).toBe('test-model')
+      return ndjsonResponse([
+        JSON.stringify({ message: { content: 'ok' } }),
+        JSON.stringify({ done: true }),
+      ])
+    }
+    const adapter = new OllamaAdapter({ baseUrl: 'http://x', fetchFn })
+    const chunks: string[] = []
+    for await (const c of adapter.chat(
+      [{ role: 'user', content: 'hi' }],
+      'test-model',
+    )) chunks.push(c)
+    expect(chunks.join('')).toBe('ok')
+  })
 })

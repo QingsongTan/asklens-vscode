@@ -35,4 +35,28 @@ describe('ClaudeAdapter', () => {
       })) {}
     })()).rejects.toThrow(/401/)
   })
+
+  it('chat 直调: 跳过 buildMessages, 用调用方提供的 messages', async () => {
+    const fetchFn = async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string)
+      // 验证 system 提取和 messages 透传
+      expect(body.system).toBe('CUSTOM SYS')
+      expect(body.messages).toEqual([{ role: 'user', content: 'hi' }])
+      expect(body.model).toBe('test-model')
+      return sseResponse([
+        'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"ok"}}\n\n',
+        'data: {"type":"message_stop"}\n\n',
+      ])
+    }
+    const adapter = new ClaudeAdapter({ apiKey: 'k', fetchFn })
+    const chunks: string[] = []
+    for await (const c of adapter.chat(
+      [
+        { role: 'system', content: 'CUSTOM SYS' },
+        { role: 'user', content: 'hi' },
+      ],
+      'test-model',
+    )) chunks.push(c)
+    expect(chunks.join('')).toBe('ok')
+  })
 })

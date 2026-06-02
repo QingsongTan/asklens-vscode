@@ -9,6 +9,7 @@ export type ExplainOptions = {
 
 export interface LLMAdapter {
   explain(opts: ExplainOptions): AsyncIterable<string>
+  chat(messages: Message[], modelId: string): AsyncIterable<string>
 }
 
 export type ProviderId = 'claude' | 'openai' | 'ollama'

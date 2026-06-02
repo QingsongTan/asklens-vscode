@@ -1,4 +1,4 @@
-import type { LLMAdapter, ExplainOptions } from './types'
+import type { LLMAdapter, ExplainOptions, Message } from './types'
 import { buildMessages } from './promptBuilder'
 import type { FetchFn } from './ClaudeAdapter'
 
@@ -6,6 +6,10 @@ export class OpenAIAdapter implements LLMAdapter {
   constructor(private opts: { apiKey: string; fetchFn?: FetchFn; baseUrl?: string }) {}
 
   async *explain(opts: ExplainOptions): AsyncIterable<string> {
+    yield* this.chat(buildMessages(opts), opts.modelId)
+  }
+
+  async *chat(messages: Message[], modelId: string): AsyncIterable<string> {
     const f = this.opts.fetchFn ?? fetch
     const res = await f((this.opts.baseUrl ?? 'https://api.openai.com') + '/v1/chat/completions', {
       method: 'POST',
@@ -14,9 +18,9 @@ export class OpenAIAdapter implements LLMAdapter {
         authorization: `Bearer ${this.opts.apiKey}`,
       },
       body: JSON.stringify({
-        model: opts.modelId,
+        model: modelId,
         stream: true,
-        messages: buildMessages(opts),
+        messages,
       }),
     })
     if (!res.ok || !res.body) throw new Error(`OpenAI API ${res.status}`)
