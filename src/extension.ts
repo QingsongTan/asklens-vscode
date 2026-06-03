@@ -170,7 +170,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         [
           { label: 'Claude (Anthropic)', value: 'claude' as ProviderId, models: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'] },
           { label: 'OpenAI', value: 'openai' as ProviderId, models: ['gpt-4o', 'gpt-4.1', 'o3', 'o3-mini'] },
-          { label: 'DeepSeek', value: 'deepseek' as ProviderId, models: ['deepseek-chat', 'deepseek-reasoner'] },
+          { label: 'DeepSeek', value: 'deepseek' as ProviderId, models: ['deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-reasoner', 'deepseek-chat'] },
           { label: 'Ollama (本地)', value: 'ollama' as ProviderId, models: ['llama3.1:8b', 'qwen2.5:7b'] },
         ],
         { title: 'Ask Anytime: 选择 Provider' },
