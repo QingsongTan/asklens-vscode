@@ -4,3 +4,5 @@ dist-tests
 .vscode-test
 *.vsix
 .DS_Store
+# 导出的知识文档默认在工作目录, 不应进开源 repo
+ask-anytime-knowledge-*.md
