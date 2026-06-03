@@ -20,38 +20,48 @@
   }
 
   function renderMarkdown(text) {
-    let result = ''
-    const codeBlockRe = /```(\w*)\n?([\s\S]*?)```/g
-    let last = 0
-    let m
-    while ((m = codeBlockRe.exec(text)) !== null) {
-      result += renderInline(text.slice(last, m.index))
-      result += `<pre><code>${escapeHtml(m[2].replace(/\n$/, ''))}</code></pre>`
-      last = m.index + m[0].length
-    }
-    result += renderInline(text.slice(last))
-    return result
+    // Extract code blocks to avoid mangling their content
+    const blocks = []
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, _lang, code) => {
+      const i = blocks.length
+      blocks.push(`<pre><code>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`)
+      return `\x00BLOCK${i}\x00`
+    })
+
+    // Split into paragraphs on blank lines
+    const parts = text.split(/\n{2,}/)
+    const html = parts.map(para => {
+      const trimmed = para.trim()
+      if (!trimmed) return ''
+      // Code block placeholder — unwrap from <p>
+      if (/^\x00BLOCK\d+\x00$/.test(trimmed)) return trimmed
+      return `<p>${renderInline(trimmed)}</p>`
+    }).join('')
+
+    // Restore code blocks
+    return html.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => blocks[Number(i)])
   }
 
   function renderInline(text) {
     return escapeHtml(text)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
       .replace(/`([^`\n]+)`/g, '<code>$1</code>')
       .replace(/\n/g, '<br>')
   }
 
   function makeTurnEl(role, text) {
+    const isAi = role !== 'user'
     const div = document.createElement('div')
-    div.className = 'turn ' + role
+    div.className = 'turn ' + (isAi ? 'assistant' : 'user')
 
     const label = document.createElement('div')
     label.className = 'turn-label'
-    label.textContent = role === 'user' ? '你' : 'AI'
+    label.textContent = isAi ? 'AI' : '你'
 
     const bubble = document.createElement('div')
     bubble.className = 'turn-bubble'
-    if (role === 'assistant') {
+    if (isAi) {
       bubble.innerHTML = text ? renderMarkdown(text) : ''
     } else {
       bubble.textContent = text

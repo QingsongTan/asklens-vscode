@@ -43,7 +43,8 @@ body { font-family: var(--vscode-font-family); font-size: var(--vscode-font-size
 .card .turn.assistant .turn-bubble code { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 3px; padding: 0 4px; font-family: var(--vscode-editor-font-family); font-size: 0.9em; }
 .card .turn.assistant .turn-bubble pre code { border: none; padding: 0; background: transparent; }
 .card .turn.assistant .turn-bubble strong { font-weight: 600; }
-.card .turn.assistant .turn-bubble br + br { display: block; content: ''; margin-top: 4px; }
+.card .turn.assistant .turn-bubble p { margin: 0 0 8px 0; }
+.card .turn.assistant .turn-bubble p:last-child { margin-bottom: 0; }
 
 /* Streaming cursor */
 .cursor { display: inline-block; animation: blink 0.8s step-end infinite; opacity: 1; }

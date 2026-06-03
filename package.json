@@ -2,7 +2,7 @@
   "name": "ask-anytime",
   "displayName": "Ask Anytime",
   "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "tanqs",
   "engines": { "vscode": "^1.95.0" },
   "main": "./dist/extension.js",
