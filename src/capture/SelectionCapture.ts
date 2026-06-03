@@ -2,6 +2,7 @@ import type { Session } from '../session/SessionTracker'
 
 export type SelectionDeps = {
   getSelection: () => string
+  readClipboard: () => Promise<string>
   getCurrentSession: () => Session | null
   showInfo: (msg: string) => void
   confirmEmptyTextMode: () => Promise<boolean>
@@ -13,9 +14,14 @@ export type SelectionDeps = {
 export const NO_SESSION = '__none__'
 
 export async function handleExplainSelection(d: SelectionDeps): Promise<void> {
-  const text = d.getSelection()
+  // 先看编辑器选区
+  let text = d.getSelection()
+  // 拿不到则 fallback 到剪贴板 (覆盖 Claude Code webview 等无法读 selection 的场景)
   if (!text || text.trim() === '') {
-    d.showInfo('请先选中要解释的文字')
+    text = await d.readClipboard()
+  }
+  if (!text || text.trim() === '') {
+    d.showInfo('请先选中要解释的文字, 或在 Claude Code 回答里 Ctrl+C 复制后再触发')
     return
   }
   let sessionId: string

@@ -114,6 +114,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
           if (!ed) return ''
           return ed.document.getText(ed.selection)
         },
+        readClipboard: () => Promise.resolve(vscode.env.clipboard.readText()),
         getCurrentSession: () => tracker.getCurrentSession(),
         showInfo: (msg) => void vscode.window.showInformationMessage(msg),
         confirmEmptyTextMode: async () => {
