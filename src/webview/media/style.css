@@ -1,19 +1,65 @@
 :root { color-scheme: light dark; }
 body { font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); margin: 0; padding: 8px; }
 .empty { color: var(--vscode-descriptionForeground); padding: 24px 8px; text-align: center; }
-.cards { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
-.card { border: 1px solid var(--vscode-panel-border); border-radius: 6px; padding: 8px; background: var(--vscode-editor-background); }
-.card.resolved { opacity: 0.6; }
-.card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.card .quote { font-family: var(--vscode-editor-font-family); background: var(--vscode-textBlockQuote-background); padding: 4px 6px; border-radius: 4px; max-height: 120px; overflow: auto; flex: 1; font-size: 0.9em; }
-.card .actions button { background: transparent; border: none; cursor: pointer; color: var(--vscode-icon-foreground); padding: 2px 6px; }
+.cards { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+
+/* Card container */
+.card { border: 1px solid var(--vscode-panel-border); border-radius: 8px; overflow: hidden; background: var(--vscode-sideBar-background, var(--vscode-editor-background)); }
+.card.resolved { opacity: 0.55; }
+
+/* Header: quote + actions */
+.card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 10px; background: var(--vscode-textBlockQuote-background); border-bottom: 1px solid var(--vscode-panel-border); }
+.card .quote-wrap { flex: 1; min-width: 0; }
+.card .quote-toggle { width: 100%; text-align: left; background: transparent; border: none; cursor: pointer; color: var(--vscode-descriptionForeground); font-size: 0.8em; padding: 0 0 2px 0; display: flex; align-items: center; gap: 5px; font-family: var(--vscode-editor-font-family); }
+.card .quote-toggle:hover { color: var(--vscode-foreground); }
+.card .quote-toggle span:last-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.card .quote { font-family: var(--vscode-editor-font-family); font-size: 0.88em; color: var(--vscode-editor-foreground); max-height: 0; overflow: hidden; transition: max-height 0.2s ease; white-space: pre-wrap; word-break: break-all; margin-top: 4px; }
+.card .quote.expanded { max-height: 180px; overflow: auto; }
+
+/* Header right: actions + badge */
+.card .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.card .actions { display: flex; }
+.card .actions button { background: transparent; border: none; cursor: pointer; color: var(--vscode-icon-foreground); padding: 2px 6px; border-radius: 3px; }
 .card .actions button:hover { background: var(--vscode-toolbar-hoverBackground); }
-.card .body { white-space: pre-wrap; word-break: break-word; }
-.card .turn { margin: 6px 0; }
-.card .turn.user::before { content: '> '; color: var(--vscode-descriptionForeground); }
-.card .followup { display: flex; gap: 4px; margin-top: 8px; }
-.card .followup input { flex: 1; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); padding: 4px; }
-.card .followup button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 4px 10px; cursor: pointer; }
-.card .error { color: var(--vscode-errorForeground); border-top: 1px dashed var(--vscode-errorForeground); padding-top: 6px; margin-top: 6px; }
-.status { color: var(--vscode-descriptionForeground); font-size: 0.85em; padding: 6px 4px; border-bottom: 1px solid var(--vscode-panel-border); margin: -8px -8px 8px -8px; padding-left: 12px; padding-right: 12px; }
-.card .badge { font-size: 0.75em; color: var(--vscode-descriptionForeground); background: var(--vscode-toolbar-hoverBackground); padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.card .badge { font-size: 0.72em; color: var(--vscode-descriptionForeground); background: var(--vscode-toolbar-hoverBackground); padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+
+/* Conversation body */
+.card .body { padding: 12px 10px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Turn base */
+.card .turn { display: flex; flex-direction: column; gap: 4px; max-width: 90%; }
+.card .turn-label { font-size: 0.75em; color: var(--vscode-descriptionForeground); font-weight: 500; }
+
+/* User turn — right aligned */
+.card .turn.user { align-self: flex-end; align-items: flex-end; }
+.card .turn.user .turn-bubble { background: var(--vscode-button-background); color: var(--vscode-button-foreground); padding: 8px 12px; border-radius: 12px 12px 2px 12px; white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+
+/* Assistant turn — left aligned */
+.card .turn.assistant { align-self: flex-start; align-items: flex-start; }
+.card .turn.assistant .turn-bubble { background: var(--vscode-editor-inactiveSelectionBackground, var(--vscode-textBlockQuote-background)); color: var(--vscode-editor-foreground); padding: 8px 12px; border-radius: 12px 12px 12px 2px; line-height: 1.6; word-break: break-word; }
+
+/* Markdown inside assistant bubble */
+.card .turn.assistant .turn-bubble pre { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; font-family: var(--vscode-editor-font-family); font-size: 0.9em; }
+.card .turn.assistant .turn-bubble code { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 3px; padding: 0 4px; font-family: var(--vscode-editor-font-family); font-size: 0.9em; }
+.card .turn.assistant .turn-bubble pre code { border: none; padding: 0; background: transparent; }
+.card .turn.assistant .turn-bubble strong { font-weight: 600; }
+.card .turn.assistant .turn-bubble br + br { display: block; content: ''; margin-top: 4px; }
+
+/* Streaming cursor */
+.cursor { display: inline-block; animation: blink 0.8s step-end infinite; opacity: 1; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Follow-up input */
+.card .followup { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--vscode-panel-border); }
+.card .followup input { flex: 1; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, var(--vscode-panel-border)); padding: 5px 8px; border-radius: 4px; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); }
+.card .followup input:focus { outline: 1px solid var(--vscode-focusBorder); border-color: var(--vscode-focusBorder); }
+.card .followup button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 5px 12px; cursor: pointer; border-radius: 4px; }
+.card .followup button:hover { background: var(--vscode-button-hoverBackground); }
+
+/* Error */
+.card .error { color: var(--vscode-errorForeground); border-top: 1px dashed var(--vscode-errorForeground); padding: 8px 10px; display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+.card .error button { background: transparent; border: 1px solid var(--vscode-errorForeground); color: var(--vscode-errorForeground); padding: 2px 8px; cursor: pointer; border-radius: 3px; font-size: 0.9em; }
+.card .error button:hover { background: var(--vscode-errorForeground); color: var(--vscode-editor-background); }
+
+/* Status bar */
+.status { color: var(--vscode-descriptionForeground); font-size: 0.82em; padding: 5px 12px; border-bottom: 1px solid var(--vscode-panel-border); margin: -8px -8px 8px -8px; }

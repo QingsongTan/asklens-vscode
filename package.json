@@ -2,7 +2,7 @@
   "name": "ask-anytime",
   "displayName": "Ask Anytime",
   "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "tanqs",
   "engines": { "vscode": "^1.95.0" },
   "main": "./dist/extension.js",
@@ -38,7 +38,7 @@
     "configuration": {
       "title": "Ask Anytime",
       "properties": {
-        "ask-anytime.provider": { "type": "string", "enum": ["claude", "openai", "ollama", "deepseek"], "default": "claude" },
+        "ask-anytime.provider": { "type": "string", "enum": ["claude", "openai", "ollama", "deepseek", "qwen", "kimi", "glm", "doubao", "hunyuan", "minimax", "yi", "step", "ernie"], "default": "claude" },
         "ask-anytime.model": { "type": "string", "default": "claude-opus-4-7" },
         "ask-anytime.ollama.baseUrl": {
           "type": "string",

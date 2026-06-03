@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { LLMRouter } from '../../src/llm/LLMRouter'
-import type { LLMAdapter, ExplainOptions } from '../../src/llm/types'
+import type { LLMAdapter, ExplainOptions, ProviderId } from '../../src/llm/types'
 
 function fakeAdapter(chunks: string[]): LLMAdapter {
   return {
@@ -13,11 +13,20 @@ function fakeAdapter(chunks: string[]): LLMAdapter {
   }
 }
 
+// 13 个 provider 槽全填 fakeAdapter, 个别 case 覆盖时再替换需要的
+function allFakes(override: Partial<Record<ProviderId, LLMAdapter>> = {}): Record<ProviderId, LLMAdapter> {
+  const ids: ProviderId[] = [
+    'claude', 'openai', 'ollama', 'deepseek', 'qwen', 'kimi', 'glm',
+    'doubao', 'hunyuan', 'minimax', 'yi', 'step', 'ernie',
+  ]
+  const base = {} as Record<ProviderId, LLMAdapter>
+  for (const id of ids) base[id] = fakeAdapter([])
+  return { ...base, ...override }
+}
+
 describe('LLMRouter', () => {
   it('按 provider 路由', async () => {
-    const claude = fakeAdapter(['c1', 'c2'])
-    const openai = fakeAdapter(['o1'])
-    const router = new LLMRouter({ claude, openai, ollama: fakeAdapter([]), deepseek: fakeAdapter([]) })
+    const router = new LLMRouter(allFakes({ claude: fakeAdapter(['c1', 'c2']) }))
     const got: string[] = []
     for await (const c of router.explain('claude', {
       selectedText: 'x', conversation: [], followUps: [], modelId: 'm',
@@ -26,10 +35,7 @@ describe('LLMRouter', () => {
   })
 
   it('未知 provider 抛错', async () => {
-    const router = new LLMRouter({
-      claude: fakeAdapter([]), openai: fakeAdapter([]), ollama: fakeAdapter([]),
-      deepseek: fakeAdapter([]),
-    })
+    const router = new LLMRouter(allFakes())
     await expect((async () => {
       // @ts-expect-error unknown provider
       for await (const _c of router.explain('unknown', { selectedText: 'x', conversation: [], followUps: [], modelId: 'm' })) {}
@@ -47,16 +53,27 @@ describe('LLMRouter', () => {
         yield 'X'
       },
     }
-    const router = new LLMRouter({
-      claude: adapter as never,
-      openai: fakeAdapter([]),
-      ollama: fakeAdapter([]),
-      deepseek: fakeAdapter([]),
-    })
+    const router = new LLMRouter(allFakes({ claude: adapter as never }))
     const out: string[] = []
     for await (const c of router.chat('claude', [{ role: 'user', content: 'hi' }], 'mid')) out.push(c)
     expect(out.join('')).toBe('X')
     expect(capturedMessages).toEqual([{ role: 'user', content: 'hi' }])
     expect(capturedModel).toBe('mid')
+  })
+
+  it('新增中国 provider 也能路由 (qwen / kimi / glm)', async () => {
+    const router = new LLMRouter(allFakes({
+      qwen: fakeAdapter(['Q']),
+      kimi: fakeAdapter(['K']),
+      glm: fakeAdapter(['G']),
+    }))
+    const collect = async (provider: ProviderId): Promise<string> => {
+      const out: string[] = []
+      for await (const c of router.explain(provider, { selectedText: 'x', conversation: [], followUps: [], modelId: 'm' })) out.push(c)
+      return out.join('')
+    }
+    expect(await collect('qwen')).toBe('Q')
+    expect(await collect('kimi')).toBe('K')
+    expect(await collect('glm')).toBe('G')
   })
 })
