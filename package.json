@@ -2,7 +2,7 @@
   "name": "ask-anytime",
   "displayName": "Ask Anytime",
   "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "tanqs",
   "engines": { "vscode": "^1.95.0" },
   "main": "./dist/extension.js",
@@ -12,6 +12,7 @@
       { "command": "ask-anytime.explainSelection", "title": "Ask Anytime: 解释选中文本" },
       { "command": "ask-anytime.uninstallHook", "title": "Ask Anytime: 移除 SessionStart hook" },
       { "command": "ask-anytime.exportKnowledge", "title": "Ask Anytime: 导出知识文档", "icon": "$(export)" },
+      { "command": "ask-anytime.switchModel", "title": "Ask Anytime: 切换 Provider / 模型", "icon": "$(symbol-misc)" },
       { "command": "ask-anytime.setApiKey", "title": "Ask Anytime: 设置 API key" },
       { "command": "ask-anytime.clearApiKey", "title": "Ask Anytime: 清除 API key" }
     ],
@@ -30,7 +31,8 @@
     },
     "menus": {
       "view/title": [
-        { "command": "ask-anytime.exportKnowledge", "when": "view == ask-anytime.annotations", "group": "navigation" }
+        { "command": "ask-anytime.switchModel", "when": "view == ask-anytime.annotations", "group": "navigation@1" },
+        { "command": "ask-anytime.exportKnowledge", "when": "view == ask-anytime.annotations", "group": "navigation@2" }
       ]
     },
     "configuration": {

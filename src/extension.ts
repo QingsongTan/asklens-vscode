@@ -165,6 +165,47 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
       router = await buildRouter(context)
       void vscode.window.showInformationMessage(`Ask Anytime: 已保存 ${providerPick.label} API key`)
     }),
+    vscode.commands.registerCommand('ask-anytime.switchModel', async () => {
+      const providerPick = await vscode.window.showQuickPick(
+        [
+          { label: 'Claude (Anthropic)', value: 'claude' as ProviderId, models: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'] },
+          { label: 'OpenAI', value: 'openai' as ProviderId, models: ['gpt-4o', 'gpt-4.1', 'o3', 'o3-mini'] },
+          { label: 'DeepSeek', value: 'deepseek' as ProviderId, models: ['deepseek-chat', 'deepseek-reasoner'] },
+          { label: 'Ollama (本地)', value: 'ollama' as ProviderId, models: ['llama3.1:8b', 'qwen2.5:7b'] },
+        ],
+        { title: 'Ask Anytime: 选择 Provider' },
+      )
+      if (!providerPick) return
+
+      type ModelItem = vscode.QuickPickItem & { value: string }
+      const modelItems: ModelItem[] = [
+        ...providerPick.models.map((m) => ({ label: m, value: m })),
+        { label: '$(edit) 自定义...', value: '__custom__', description: '手动输入模型 ID' },
+      ]
+      const modelPick = await vscode.window.showQuickPick(modelItems, {
+        title: `Ask Anytime: 选择 ${providerPick.label} 的 Model`,
+      })
+      if (!modelPick) return
+
+      let modelId = modelPick.value
+      if (modelId === '__custom__') {
+        const custom = await vscode.window.showInputBox({
+          title: `Ask Anytime: 输入 ${providerPick.label} 的 Model ID`,
+          placeHolder: 'e.g. gpt-4o-mini, deepseek-chat, llama3.2:3b',
+          ignoreFocusOut: true,
+          validateInput: (v) => (v.trim().length === 0 ? '不能为空' : null),
+        })
+        if (!custom) return
+        modelId = custom.trim()
+      }
+
+      const cfg = vscode.workspace.getConfiguration('ask-anytime')
+      await cfg.update('provider', providerPick.value, vscode.ConfigurationTarget.Global)
+      await cfg.update('model', modelId, vscode.ConfigurationTarget.Global)
+      void vscode.window.showInformationMessage(
+        `Ask Anytime: 已切换到 ${providerPick.label} / ${modelId}`,
+      )
+    }),
     vscode.commands.registerCommand('ask-anytime.clearApiKey', async () => {
       const providerPick = await vscode.window.showQuickPick(
         [
