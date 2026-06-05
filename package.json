@@ -1,9 +1,10 @@
 {
-  "name": "asklens-for-claude-code",
+  "name": "asklens",
   "displayName": "AskLens for Claude Code",
-  "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
+  "description": "Ask selected text in Claude Code with full session context.",
   "version": "0.0.6",
-  "publisher": "tanqs",
+  "publisher": "asklens",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/QingsongTan/ask-anytime-vscode"
