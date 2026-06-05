@@ -41,7 +41,7 @@ const PROVIDER_PRESETS: ProviderPreset[] = [
 ]
 
 const SECRET_KEYS = PROVIDER_PRESETS.reduce((acc, p) => {
-  acc[p.id] = `ask-anytime.${p.id}.apiKey`
+  acc[p.id] = `asklens.${p.id}.apiKey`
   return acc
 }, {} as Record<ProviderId, string>)
 
@@ -71,14 +71,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
       if (await context.secrets.get(SECRET_KEYS[p.id])) return
     }
     const action = await vscode.window.showInformationMessage(
-      'Ask Anytime 已安装！请配置 AI Provider 开始使用。',
+      'AskLens 已安装！请配置 AI Provider 开始使用。',
       '立即配置', '稍后配置',
     )
     if (action !== '立即配置') return
 
     const allProviders = PROVIDER_PRESETS.map((p) => ({ label: p.label, value: p.id, hint: p.hint ?? 'sk-...', isOllama: p.id === 'ollama' }))
     const providerPick = await vscode.window.showQuickPick(allProviders, {
-      title: 'Ask Anytime 配置向导（1/2）：选择 AI Provider',
+      title: 'AskLens 配置向导（1/2）：选择 AI Provider',
     })
     if (!providerPick) return
 
@@ -87,7 +87,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 
     if (!providerPick.isOllama) {
       const key = await vscode.window.showInputBox({
-        title: `Ask Anytime 配置向导（2/2）：输入 ${providerPick.label} API key`,
+        title: `AskLens 配置向导（2/2）：输入 ${providerPick.label} API key`,
         placeHolder: providerPick.hint,
         password: true,
         ignoreFocusOut: true,
@@ -98,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     }
 
     router = await buildRouter(context)
-    void vscode.window.showInformationMessage('Ask Anytime：配置完成！选中文字后 Ctrl+C 复制，再按 Ctrl+Enter 开始使用。')
+    void vscode.window.showInformationMessage('AskLens：配置完成！选中文字后直接按 Ctrl+Enter 开始使用。')
   }
 
   void runOnboarding()
@@ -144,7 +144,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     const cur = tracker.getCurrentSession()
     const conversation = cur
       ? await buildContext(cur.transcriptPath, { maxTokens: 100_000 }).catch((e) => {
-          console.warn('[ask-anytime] 读取 Claude Code 会话日志失败, 将仅用选中文本解释:', e)
+          console.warn('[asklens] 读取 Claude Code 会话日志失败, 将仅用选中文本解释:', e)
           return []
         })
       : []
@@ -174,7 +174,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
   }
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('ask-anytime.explainSelection', async () => {
+    vscode.commands.registerCommand('asklens.explainSelection', async () => {
       await Promise.resolve(vscode.commands.executeCommand('editor.action.clipboardCopyAction')).catch(() => {})
       await new Promise(r => setTimeout(r, 50))
       await handleExplainSelection({
@@ -198,11 +198,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         explainCard: (id) => runExplain(id),
       })
     }),
-    vscode.commands.registerCommand('ask-anytime.uninstallHook', async () => {
+    vscode.commands.registerCommand('asklens.uninstallHook', async () => {
       await uninstallHook({ home })
-      void vscode.window.showInformationMessage('已移除 Ask Anytime 的 SessionStart hook')
+      void vscode.window.showInformationMessage('已移除 AskLens 的 SessionStart hook')
     }),
-    vscode.commands.registerCommand('ask-anytime.exportKnowledge', async () => {
+    vscode.commands.registerCommand('asklens.exportKnowledge', async () => {
       const cfg = vscode.workspace.getConfiguration('ask-anytime')
       await handleExportKnowledge({
         store,
@@ -212,14 +212,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         getMaxTokens: () => 100_000,
       })
     }),
-    vscode.commands.registerCommand('ask-anytime.setApiKey', async () => {
+    vscode.commands.registerCommand('asklens.setApiKey', async () => {
       const providerPick = await vscode.window.showQuickPick(
         KEYED_PROVIDERS.map((p) => ({ label: p.label, value: p.id, hint: p.hint ?? 'sk-...' })),
-        { title: 'Ask Anytime: 选择要配置 API key 的 Provider' },
+        { title: 'AskLens: 选择要配置 API key 的 Provider' },
       )
       if (!providerPick) return
       const key = await vscode.window.showInputBox({
-        title: `Ask Anytime: 输入 ${providerPick.label} API key`,
+        title: `AskLens: 输入 ${providerPick.label} API key`,
         placeHolder: providerPick.hint,
         password: true,
         ignoreFocusOut: true,
@@ -228,12 +228,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
       if (!key) return
       await context.secrets.store(SECRET_KEYS[providerPick.value], key.trim())
       router = await buildRouter(context)
-      void vscode.window.showInformationMessage(`Ask Anytime: 已保存 ${providerPick.label} API key`)
+      void vscode.window.showInformationMessage(`AskLens: 已保存 ${providerPick.label} API key`)
     }),
-    vscode.commands.registerCommand('ask-anytime.switchModel', async () => {
+    vscode.commands.registerCommand('asklens.switchModel', async () => {
       const providerPick = await vscode.window.showQuickPick(
         PROVIDER_PRESETS.map((p) => ({ label: p.label, value: p.id, models: p.models })),
-        { title: 'Ask Anytime: 选择 Provider' },
+        { title: 'AskLens: 选择 Provider' },
       )
       if (!providerPick) return
 
@@ -243,14 +243,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         { label: '$(edit) 自定义...', value: '__custom__', description: '手动输入模型 ID' },
       ]
       const modelPick = await vscode.window.showQuickPick(modelItems, {
-        title: `Ask Anytime: 选择 ${providerPick.label} 的 Model`,
+        title: `AskLens: 选择 ${providerPick.label} 的 Model`,
       })
       if (!modelPick) return
 
       let modelId = modelPick.value
       if (modelId === '__custom__') {
         const custom = await vscode.window.showInputBox({
-          title: `Ask Anytime: 输入 ${providerPick.label} 的 Model ID`,
+          title: `AskLens: 输入 ${providerPick.label} 的 Model ID`,
           placeHolder: 'e.g. gpt-4o-mini, deepseek-chat, llama3.2:3b',
           ignoreFocusOut: true,
           validateInput: (v) => (v.trim().length === 0 ? '不能为空' : null),
@@ -263,18 +263,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
       await cfg.update('provider', providerPick.value, vscode.ConfigurationTarget.Global)
       await cfg.update('model', modelId, vscode.ConfigurationTarget.Global)
       void vscode.window.showInformationMessage(
-        `Ask Anytime: 已切换到 ${providerPick.label} / ${modelId}`,
+        `AskLens: 已切换到 ${providerPick.label} / ${modelId}`,
       )
     }),
-    vscode.commands.registerCommand('ask-anytime.clearApiKey', async () => {
+    vscode.commands.registerCommand('asklens.clearApiKey', async () => {
       const providerPick = await vscode.window.showQuickPick(
         KEYED_PROVIDERS.map((p) => ({ label: p.label, value: p.id })),
-        { title: 'Ask Anytime: 选择要清除 API key 的 Provider' },
+        { title: 'AskLens: 选择要清除 API key 的 Provider' },
       )
       if (!providerPick) return
       await context.secrets.delete(SECRET_KEYS[providerPick.value])
       router = await buildRouter(context)
-      void vscode.window.showInformationMessage(`Ask Anytime: 已清除 ${providerPick.label} API key`)
+      void vscode.window.showInformationMessage(`AskLens: 已清除 ${providerPick.label} API key`)
     }),
   )
 
@@ -284,20 +284,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 }
 
 const SETTINGS_PARSE_ERROR_MESSAGE =
-  'settings.json 无法解析，Ask Anytime 已跳过 hook 安装/更新且未修改该文件，仍可使用兜底会话感知。'
+  'settings.json 无法解析，AskLens 已跳过 hook 安装/更新且未修改该文件，仍可使用兜底会话感知。'
 const HOOK_INSTALL_ERROR_MESSAGE =
-  'Ask Anytime: hook 安装/更新失败，已停止本次 hook 安装/更新，仍可使用兜底会话感知。'
+  'AskLens: hook 安装/更新失败，已停止本次 hook 安装/更新，仍可使用兜底会话感知。'
 
 export async function ensureHookInstalledOnStartup(context: vscode.ExtensionContext, home: string): Promise<void> {
   try {
     await ensureHookInstalled(context, home)
   } catch (e) {
     if (isSettingsParseError(e)) {
-      console.warn('[ask-anytime] 无法解析 ~/.claude/settings.json, 已跳过 hook 安装/更新:', e)
+      console.warn('[asklens] 无法解析 ~/.claude/settings.json, 已跳过 hook 安装/更新:', e)
       void vscode.window.showErrorMessage(SETTINGS_PARSE_ERROR_MESSAGE)
       return
     }
-    console.warn('[ask-anytime] 安装/更新 SessionStart hook 失败:', e)
+    console.warn('[asklens] 安装/更新 SessionStart hook 失败:', e)
     void vscode.window.showErrorMessage(HOOK_INSTALL_ERROR_MESSAGE)
   }
 }
@@ -323,24 +323,24 @@ async function ensureHookInstalled(context: vscode.ExtensionContext, home: strin
   if (await isHookInstalled({ home })) {
     await uninstallHook({ home })
     await installHook({ home, hookScriptPath: stablePath })
-    void vscode.window.showInformationMessage('Ask Anytime: 已更新 SessionStart hook 到稳定路径 (避免扩展升级后失效)')
+    void vscode.window.showInformationMessage('AskLens: 已更新 SessionStart hook 到稳定路径 (避免扩展升级后失效)')
     return
   }
 
   // 5. 完全未装 → 询问用户是否安装
   const choice = await vscode.window.showInformationMessage(
-    'Ask Anytime 需要在 ~/.claude/settings.json 安装一个 SessionStart hook 才能精准感知 Claude Code 会话。是否同意安装?',
+    'AskLens 需要在 ~/.claude/settings.json 安装一个 SessionStart hook 才能精准感知 Claude Code 会话。是否同意安装?',
     '安装', '使用兜底方案(不安装)',
   )
   if (choice === '安装') {
     await installHook({ home, hookScriptPath: stablePath })
-    void vscode.window.showInformationMessage('hook 已安装,可通过 "Ask Anytime: 移除 SessionStart hook" 卸载')
+    void vscode.window.showInformationMessage('hook 已安装,可通过 "AskLens: 移除 SessionStart hook" 卸载')
   }
 }
 
 async function buildRouter(context: vscode.ExtensionContext): Promise<LLMRouter> {
   const cfg = vscode.workspace.getConfiguration('ask-anytime')
-  // 用户可在 settings.json 通过 `ask-anytime.<provider>.baseUrl` 覆盖默认 baseUrl (走中转/镜像)
+  // 用户可在 settings.json 通过 `asklens.<provider>.baseUrl` 覆盖默认 baseUrl (走中转/镜像)
   const resolveBaseUrl = (id: ProviderId, fallback?: string): string | undefined =>
     cfg.get<string>(`${id}.baseUrl`) || fallback
 

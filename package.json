@@ -1,6 +1,6 @@
 {
-  "name": "ask-anytime",
-  "displayName": "Ask Anytime",
+  "name": "asklens-for-claude-code",
+  "displayName": "AskLens for Claude Code",
   "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
   "version": "0.0.6",
   "publisher": "tanqs",
@@ -17,48 +17,48 @@
   "activationEvents": ["onStartupFinished"],
   "contributes": {
     "commands": [
-      { "command": "ask-anytime.explainSelection", "title": "Ask Anytime: 解释选中文本" },
-      { "command": "ask-anytime.uninstallHook", "title": "Ask Anytime: 移除 SessionStart hook" },
-      { "command": "ask-anytime.exportKnowledge", "title": "Ask Anytime: 导出知识文档", "icon": "$(export)" },
-      { "command": "ask-anytime.switchModel", "title": "Ask Anytime: 切换 Provider / 模型", "icon": "$(symbol-misc)" },
-      { "command": "ask-anytime.setApiKey", "title": "Ask Anytime: 设置 API key" },
-      { "command": "ask-anytime.clearApiKey", "title": "Ask Anytime: 清除 API key" }
+      { "command": "asklens.explainSelection", "title": "AskLens: 解释选中文本" },
+      { "command": "asklens.uninstallHook", "title": "AskLens: 移除 SessionStart hook" },
+      { "command": "asklens.exportKnowledge", "title": "AskLens: 导出知识文档", "icon": "$(export)" },
+      { "command": "asklens.switchModel", "title": "AskLens: 切换 Provider / 模型", "icon": "$(symbol-misc)" },
+      { "command": "asklens.setApiKey", "title": "AskLens: 设置 API key" },
+      { "command": "asklens.clearApiKey", "title": "AskLens: 清除 API key" }
     ],
     "keybindings": [
-      { "command": "ask-anytime.explainSelection", "key": "ctrl+enter", "mac": "cmd+enter" }
+      { "command": "asklens.explainSelection", "key": "ctrl+enter", "mac": "cmd+enter" }
     ],
     "viewsContainers": {
       "activitybar": [
-        { "id": "ask-anytime", "title": "Ask Anytime", "icon": "$(comment-discussion)" }
+        { "id": "asklens", "title": "AskLens", "icon": "$(comment-discussion)" }
       ]
     },
     "views": {
-      "ask-anytime": [
-        { "id": "ask-anytime.annotations", "name": "批注", "type": "webview" }
+      "asklens": [
+        { "id": "asklens.annotations", "name": "批注", "type": "webview" }
       ]
     },
     "menus": {
       "view/title": [
-        { "command": "ask-anytime.switchModel", "when": "view == ask-anytime.annotations", "group": "navigation@1" },
-        { "command": "ask-anytime.exportKnowledge", "when": "view == ask-anytime.annotations", "group": "navigation@2" }
+        { "command": "asklens.switchModel", "when": "view == asklens.annotations", "group": "navigation@1" },
+        { "command": "asklens.exportKnowledge", "when": "view == asklens.annotations", "group": "navigation@2" }
       ]
     },
     "configuration": {
-      "title": "Ask Anytime",
+      "title": "AskLens",
       "properties": {
-        "ask-anytime.provider": { "type": "string", "enum": ["claude", "openai", "ollama", "deepseek", "qwen", "kimi", "glm", "doubao", "hunyuan", "minimax", "yi", "step", "ernie"], "default": "claude" },
-        "ask-anytime.model": { "type": "string", "default": "claude-opus-4-8" },
-        "ask-anytime.ollama.baseUrl": {
+        "asklens.provider": { "type": "string", "enum": ["claude", "openai", "ollama", "deepseek", "qwen", "kimi", "glm", "doubao", "hunyuan", "minimax", "yi", "step", "ernie"], "default": "claude" },
+        "asklens.model": { "type": "string", "default": "claude-opus-4-8" },
+        "asklens.ollama.baseUrl": {
           "type": "string",
           "default": "http://127.0.0.1:11434",
           "description": "Ollama 服务的 HTTP 地址, 远端部署时改这里"
         },
-        "ask-anytime.deepseek.baseUrl": {
+        "asklens.deepseek.baseUrl": {
           "type": "string",
           "default": "https://api.deepseek.com",
           "description": "DeepSeek API 基地址, 走中转/镜像时改这里"
         },
-        "ask-anytime.obsidianVaultPath": {
+        "asklens.obsidianVaultPath": {
           "type": "string",
           "default": "",
           "description": "Obsidian Vault 根目录路径，导出知识文档后自动写入原子笔记。留空则每次导出时弹窗选择。"

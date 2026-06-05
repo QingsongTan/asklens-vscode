@@ -26,7 +26,7 @@ describe('renderRaw', () => {
 
   it('空 cards: 输出仅标题和概览', () => {
     const out = renderRaw([], { now: fixedNow })
-    expect(out).toContain('# Ask Anytime 知识导出 (2026-05-25)')
+    expect(out).toContain('# AskLens 知识导出 (2026-05-25)')
     expect(out).toContain('共 0 张卡片')
     expect(out).toContain('0 个会话')
   })

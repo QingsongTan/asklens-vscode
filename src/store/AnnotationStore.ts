@@ -20,7 +20,7 @@ export type AnnotationCard = {
 
 type StoreShape = { [sessionId: string]: AnnotationCard[] }
 
-const KEY = 'ask-anytime.annotations.v1'
+const KEY = 'asklens.annotations.v1'
 
 export class AnnotationStore {
   private listeners: Array<(sid: string) => void> = []

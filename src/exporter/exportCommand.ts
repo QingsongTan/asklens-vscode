@@ -20,7 +20,7 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
   const allCards: AnnotationCard[] = deps.store.allSessions().flatMap((sid) => deps.store.get(sid))
 
   if (allCards.length === 0) {
-    void vscode.window.showInformationMessage('Ask Anytime: 还没有任何批注卡片可导出')
+    void vscode.window.showInformationMessage('AskLens: 还没有任何批注卡片可导出')
     return
   }
 
@@ -50,7 +50,7 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
   }
 
   const picked = await vscode.window.showQuickPick(items, {
-    title: 'Ask Anytime 导出: 勾选要导出的卡片',
+    title: 'AskLens 导出: 勾选要导出的卡片',
     canPickMany: true,
     matchOnDescription: true,
   })
@@ -66,12 +66,12 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
       { label: '$(book) AI 总结为知识文章', description: '调 LLM 把卡片整合为结构化文章 (耗 token)', value: 'article' as const },
       { label: '$(list-flat) 原文卡片清单', description: '按时间顺序输出 Markdown, 不调用 LLM', value: 'raw' as const },
     ],
-    { title: 'Ask Anytime 导出: 选择格式' },
+    { title: 'AskLens 导出: 选择格式' },
   )
   if (!formatChoice) return
 
   // (3) saveAs
-  const defaultName = `ask-anytime-knowledge-${new Date().toISOString().slice(0, 10)}.md`
+  const defaultName = `asklens-knowledge-${new Date().toISOString().slice(0, 10)}.md`
   const folder = vscode.workspace.workspaceFolders?.[0]?.uri
   const defaultUri = folder
     ? vscode.Uri.joinPath(folder, defaultName)
@@ -102,7 +102,7 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
     const chunks: string[] = []
     let failed: Error | undefined
     await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Ask Anytime: 正在生成知识文章…', cancellable: false },
+      { location: vscode.ProgressLocation.Notification, title: 'AskLens: 正在生成知识文章…', cancellable: false },
       async () => {
         try {
           for await (const chunk of renderArticle(
@@ -118,7 +118,7 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
       },
     )
     if (failed) {
-      void vscode.window.showErrorMessage('Ask Anytime: 生成失败 — ' + failed.message)
+      void vscode.window.showErrorMessage('AskLens: 生成失败 — ' + failed.message)
       return
     }
     content = chunks.join('')
@@ -129,7 +129,7 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
   const doc = await vscode.workspace.openTextDocument(fileUri)
   await vscode.window.showTextDocument(doc, { preview: false })
   void vscode.window.showInformationMessage(
-    `Ask Anytime: 已导出 ${selectedCards.length} 张卡片到 ${fileUri.fsPath}`,
+    `AskLens: 已导出 ${selectedCards.length} 张卡片到 ${fileUri.fsPath}`,
   )
 
   // (6) 自动同步到 Obsidian Vault
@@ -138,12 +138,12 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
 
 async function syncToObsidian(exportedFilePath: string): Promise<void> {
   const confirm = await vscode.window.showInformationMessage(
-    'Ask Anytime: 是否同步到 Obsidian？',
+    'AskLens: 是否同步到 Obsidian？',
     '同步', '跳过',
   )
   if (confirm !== '同步') return
 
-  const cfg = vscode.workspace.getConfiguration('ask-anytime')
+  const cfg = vscode.workspace.getConfiguration('asklens')
   let vaultPath = cfg.get<string>('obsidianVaultPath', '')
 
   if (!vaultPath) {
@@ -151,7 +151,7 @@ async function syncToObsidian(exportedFilePath: string): Promise<void> {
       canSelectFiles: false,
       canSelectFolders: true,
       canSelectMany: false,
-      title: 'Ask Anytime: 选择 Obsidian Vault 文件夹（仅需配置一次）',
+      title: 'AskLens: 选择 Obsidian Vault 文件夹（仅需配置一次）',
       openLabel: '选择此 Vault',
     })
     if (!picked || picked.length === 0) return
@@ -163,12 +163,12 @@ async function syncToObsidian(exportedFilePath: string): Promise<void> {
     const { noteCount, outputDir } = await exportToObsidian(exportedFilePath, vaultPath)
     if (noteCount > 0) {
       void vscode.window.showInformationMessage(
-        `Ask Anytime: 已同步 ${noteCount} 个笔记到 Obsidian → ${outputDir}`,
+        `AskLens: 已同步 ${noteCount} 个笔记到 Obsidian → ${outputDir}`,
       )
     }
   } catch (e) {
     void vscode.window.showWarningMessage(
-      `Ask Anytime: Obsidian 同步失败 — ${(e as Error).message}`,
+      `AskLens: Obsidian 同步失败 — ${(e as Error).message}`,
     )
   }
 }

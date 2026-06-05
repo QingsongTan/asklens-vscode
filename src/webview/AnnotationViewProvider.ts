@@ -6,7 +6,7 @@ import type { AnnotationStore } from '../store/AnnotationStore'
 import type { ExtToWeb, WebToExt } from './messages'
 
 export class AnnotationViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'ask-anytime.annotations'
+  public static readonly viewType = 'asklens.annotations'
   private view?: vscode.WebviewView
 
   constructor(
@@ -55,7 +55,7 @@ export class AnnotationViewProvider implements vscode.WebviewViewProvider {
         case 'delete': await this.store.delete(m.cardId); break
         case 'retry': await this.handlers.onRetry(m.cardId); break
         case 'open-settings':
-          await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:tanqs.ask-anytime')
+          await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:tanqs.asklens-for-claude-code')
           break
       }
     })

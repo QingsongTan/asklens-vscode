@@ -3,9 +3,9 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 // 旧版扁平结构 entry 的标签, 仅用于自动迁移识别 (新装条目不再写 tag)
-export const HOOK_TAG = 'ask-anytime/write_session/v1'
+export const HOOK_TAG = 'asklens/write_session/v1'
 
-export const STABLE_HOOK_FILENAME = 'ask-anytime-hook.js'
+export const STABLE_HOOK_FILENAME = 'asklens-hook.js'
 
 type CommandHook = { type?: string; command?: string }
 type HookEntry = {
@@ -31,7 +31,7 @@ async function readSettings(home: string): Promise<Settings> {
   } catch (e) {
     if (!(e instanceof SyntaxError)) throw e
     const detail = e instanceof Error ? e.message : String(e)
-    throw new Error(`[ask-anytime] 无法解析 ~/.claude/settings.json, 已阻止写入以避免覆盖用户配置: ${detail}`)
+    throw new Error(`[asklens] 无法解析 ~/.claude/settings.json, 已阻止写入以避免覆盖用户配置: ${detail}`)
   }
 }
 

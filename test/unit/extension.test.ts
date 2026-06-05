@@ -83,7 +83,7 @@ describe('extension hook startup', () => {
     expect(readFileSync(settings, 'utf8')).toBe(original)
     expect(existsSync(join(claudeDir, STABLE_HOOK_FILENAME))).toBe(false)
     expect(vscodeMock.showErrorMessage).toHaveBeenCalledWith(
-      'settings.json 无法解析，Ask Anytime 已跳过 hook 安装/更新且未修改该文件，仍可使用兜底会话感知。',
+      'settings.json 无法解析，AskLens 已跳过 hook 安装/更新且未修改该文件，仍可使用兜底会话感知。',
     )
   })
 
@@ -105,13 +105,13 @@ describe('extension hook startup', () => {
 
     expect(readFileSync(settings, 'utf8')).toBe(original)
     expect(vscodeMock.showErrorMessage).toHaveBeenCalledWith(
-      'Ask Anytime: hook 安装/更新失败，已停止本次 hook 安装/更新，仍可使用兜底会话感知。',
+      'AskLens: hook 安装/更新失败，已停止本次 hook 安装/更新，仍可使用兜底会话感知。',
     )
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
-      'Ask Anytime: 已更新 SessionStart hook 到稳定路径 (避免扩展升级后失效)',
+      'AskLens: 已更新 SessionStart hook 到稳定路径 (避免扩展升级后失效)',
     )
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
-      'hook 已安装,可通过 "Ask Anytime: 移除 SessionStart hook" 卸载',
+      'hook 已安装,可通过 "AskLens: 移除 SessionStart hook" 卸载',
     )
   })
 })

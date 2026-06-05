@@ -45,7 +45,7 @@ function buildNoteContent(title: string, body: string, otherTitles: string[], da
   const linkedBody = addWikiLinks(body, otherTitles)
   return [
     '---',
-    'tags: [ask-anytime, 知识卡片]',
+    'tags: [asklens, 知识卡片]',
     'aliases: []',
     `created: ${date}`,
     '---',
@@ -61,11 +61,11 @@ function buildMOC(sections: Array<{ title: string }>, date: string, sourceFile: 
   const links = sections.map((s) => `- [[${s.title}]]`).join('\n')
   return [
     '---',
-    'tags: [MOC, ask-anytime]',
+    'tags: [MOC, asklens]',
     `created: ${date}`,
     '---',
     '',
-    `# Ask Anytime 知识地图 - ${date}`,
+    `# AskLens 知识地图 - ${date}`,
     '',
     `> 来源: ${path.basename(sourceFile)}`,
     '',
@@ -88,7 +88,7 @@ export async function exportToObsidian(
     return { noteCount: 0, outputDir: vaultPath }
   }
 
-  const outputDir = path.join(vaultPath, `ask-anytime-${date}`)
+  const outputDir = path.join(vaultPath, `asklens-${date}`)
   await fs.mkdir(outputDir, { recursive: true })
 
   const allTitles = sections.map((s) => s.title)
@@ -101,7 +101,7 @@ export async function exportToObsidian(
   )
 
   const moc = buildMOC(sections, date, exportedFilePath)
-  await fs.writeFile(path.join(outputDir, `000-MOC-ask-anytime-${date}.md`), moc, 'utf-8')
+  await fs.writeFile(path.join(outputDir, `000-MOC-asklens-${date}.md`), moc, 'utf-8')
 
   return { noteCount: sections.length, outputDir }
 }

@@ -37,7 +37,7 @@ export class SessionTracker {
         if (file === null || file === '.ask_anytime_session.json') void this.refresh()
       })
     } catch (e) {
-      console.warn('[ask-anytime] 无法监听 .claude 目录, 会话感知将退化为仅启动时读取一次:', e)
+      console.warn('[asklens] 无法监听 .claude 目录, 会话感知将退化为仅启动时读取一次:', e)
     }
   }
 
