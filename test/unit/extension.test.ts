@@ -2,15 +2,21 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import manifest from '../../package.json'
 import { STABLE_HOOK_FILENAME } from '../../src/session/hookInstaller'
 
 const vscodeMock = vi.hoisted(() => {
   const showErrorMessage = vi.fn()
   const showInformationMessage = vi.fn()
+  const registeredCommands = new Map<string, (...args: unknown[]) => unknown>()
+  let homeDir = ''
 
   return {
     showErrorMessage,
     showInformationMessage,
+    registeredCommands,
+    get homeDir() { return homeDir },
+    set homeDir(value: string) { homeDir = value },
     module: {
       window: {
         showErrorMessage,
@@ -23,11 +29,14 @@ const vscodeMock = vi.hoisted(() => {
       },
       workspace: {
         workspaceFolders: undefined,
-        getConfiguration: vi.fn(() => ({ get: vi.fn(), update: vi.fn() })),
+        getConfiguration: vi.fn((_section?: string) => ({ get: vi.fn(), update: vi.fn() })),
         onDidChangeWorkspaceFolders: vi.fn(() => ({ dispose: vi.fn() })),
       },
       commands: {
-        registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
+        registerCommand: vi.fn((command: string, callback: (...args: unknown[]) => unknown) => {
+          registeredCommands.set(command, callback)
+          return { dispose: vi.fn() }
+        }),
         executeCommand: vi.fn(),
       },
       env: { clipboard: { readText: vi.fn() } },
@@ -44,8 +53,12 @@ const vscodeMock = vi.hoisted(() => {
 })
 
 vi.mock('vscode', () => vscodeMock.module)
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:os')>()
+  return { ...actual, homedir: () => vscodeMock.homeDir || actual.homedir() }
+})
 
-import { ensureHookInstalledOnStartup } from '../../src/extension'
+import { activate, ensureHookInstalledOnStartup } from '../../src/extension'
 
 describe('extension hook startup', () => {
   let home: string
@@ -55,6 +68,7 @@ describe('extension hook startup', () => {
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'home-'))
     extensionPath = mkdtempSync(join(tmpdir(), 'ext-'))
+    vscodeMock.homeDir = home
     vscodeMock.showErrorMessage.mockClear()
     vscodeMock.showInformationMessage.mockClear()
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
@@ -113,5 +127,63 @@ describe('extension hook startup', () => {
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
       'hook 已安装,可通过 "AskLens: 移除 SessionStart hook" 卸载',
     )
+  })
+})
+
+describe('extension configuration namespace', () => {
+  let home: string
+  let extensionPath: string
+
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'home-'))
+    extensionPath = mkdtempSync(join(tmpdir(), 'ext-'))
+    vscodeMock.homeDir = home
+    vscodeMock.registeredCommands.clear()
+    vscodeMock.module.window.showQuickPick.mockReset()
+    vscodeMock.module.window.showInputBox.mockReset()
+    vscodeMock.module.window.showInformationMessage.mockReset()
+    vscodeMock.module.workspace.getConfiguration.mockReset()
+    vscodeMock.module.workspace.onDidChangeWorkspaceFolders.mockReturnValue({ dispose: vi.fn() })
+  })
+
+  afterEach(() => {
+    rmSync(home, { recursive: true, force: true })
+    rmSync(extensionPath, { recursive: true, force: true })
+  })
+
+  it('切换 Provider / 模型时只写入已注册的 asklens 配置项', async () => {
+    mkdirSync(join(home, '.claude'), { recursive: true })
+    const hookDir = join(extensionPath, 'hook')
+    mkdirSync(hookDir, { recursive: true })
+    writeFileSync(join(hookDir, 'write_session.js'), '// hook\n')
+
+    const registeredSettings = new Set(Object.keys(manifest.contributes.configuration.properties))
+    const updatedKeys: string[] = []
+    vscodeMock.module.workspace.getConfiguration.mockImplementation((section = '') => ({
+      get: vi.fn(),
+      update: vi.fn(async (key: string) => {
+        const fullKey = `${section}.${key}`
+        if (!registeredSettings.has(fullKey)) {
+          throw new Error(`没有注册配置 ${fullKey}`)
+        }
+        updatedKeys.push(fullKey)
+      }),
+    }))
+    vscodeMock.module.window.showQuickPick
+      .mockResolvedValueOnce({ label: 'DeepSeek', value: 'deepseek', models: ['deepseek-chat'] })
+      .mockResolvedValueOnce({ label: 'deepseek-chat', value: 'deepseek-chat' })
+
+    const context = {
+      extensionPath,
+      extensionUri: { fsPath: extensionPath },
+      globalState: { get: vi.fn(), update: vi.fn() },
+      secrets: { get: vi.fn(), store: vi.fn(), delete: vi.fn() },
+      subscriptions: [],
+    } as unknown as Parameters<typeof activate>[0]
+    await activate(context)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    await vscodeMock.registeredCommands.get('asklens.switchModel')?.()
+
+    expect(updatedKeys).toEqual(['asklens.provider', 'asklens.model'])
   })
 })

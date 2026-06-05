@@ -2,7 +2,7 @@
   "name": "asklens",
   "displayName": "AskLens for Claude Code",
   "description": "Ask selected text in Claude Code with full session context.",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "publisher": "asklens",
   "icon": "images/icon.png",
   "repository": {

@@ -44,6 +44,7 @@ const SECRET_KEYS = PROVIDER_PRESETS.reduce((acc, p) => {
   acc[p.id] = `asklens.${p.id}.apiKey`
   return acc
 }, {} as Record<ProviderId, string>)
+const CONFIG_NAMESPACE = 'asklens'
 
 // Provider 需要 API key 的 (排除 ollama)
 const KEYED_PROVIDERS = PROVIDER_PRESETS.filter((p) => p.id !== 'ollama')
@@ -82,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
     })
     if (!providerPick) return
 
-    const cfg = vscode.workspace.getConfiguration('ask-anytime')
+    const cfg = vscode.workspace.getConfiguration(CONFIG_NAMESPACE)
     await cfg.update('provider', providerPick.value, vscode.ConfigurationTarget.Global)
 
     if (!providerPick.isOllama) {
@@ -138,7 +139,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
   )
 
   async function runExplain(cardId: string): Promise<void> {
-    const cfg = vscode.workspace.getConfiguration('ask-anytime')
+    const cfg = vscode.workspace.getConfiguration(CONFIG_NAMESPACE)
     const providerId = cfg.get<ProviderId>('provider', 'claude')
     const modelId = cfg.get<string>('model', 'claude-opus-4-8')
     const cur = tracker.getCurrentSession()
@@ -203,7 +204,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
       void vscode.window.showInformationMessage('已移除 AskLens 的 SessionStart hook')
     }),
     vscode.commands.registerCommand('asklens.exportKnowledge', async () => {
-      const cfg = vscode.workspace.getConfiguration('ask-anytime')
+      const cfg = vscode.workspace.getConfiguration(CONFIG_NAMESPACE)
       await handleExportKnowledge({
         store,
         router,
@@ -259,7 +260,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         modelId = custom.trim()
       }
 
-      const cfg = vscode.workspace.getConfiguration('ask-anytime')
+      const cfg = vscode.workspace.getConfiguration(CONFIG_NAMESPACE)
       await cfg.update('provider', providerPick.value, vscode.ConfigurationTarget.Global)
       await cfg.update('model', modelId, vscode.ConfigurationTarget.Global)
       void vscode.window.showInformationMessage(
@@ -339,7 +340,7 @@ async function ensureHookInstalled(context: vscode.ExtensionContext, home: strin
 }
 
 async function buildRouter(context: vscode.ExtensionContext): Promise<LLMRouter> {
-  const cfg = vscode.workspace.getConfiguration('ask-anytime')
+  const cfg = vscode.workspace.getConfiguration(CONFIG_NAMESPACE)
   // 用户可在 settings.json 通过 `asklens.<provider>.baseUrl` 覆盖默认 baseUrl (走中转/镜像)
   const resolveBaseUrl = (id: ProviderId, fallback?: string): string | undefined =>
     cfg.get<string>(`${id}.baseUrl`) || fallback
