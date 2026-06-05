@@ -57,6 +57,32 @@ describe('hookInstaller', () => {
     expect(cfg.hooks.SessionStart).toHaveLength(1)
   })
 
+  it('settings.json 为坏 JSON 时, install 报错且不覆盖原文件', async () => {
+    const dir = join(home, '.claude')
+    mkdirSync(dir, { recursive: true })
+    const settings = join(dir, 'settings.json')
+    const original = '{"hooks":'
+    writeFileSync(settings, original)
+
+    await expect(installHook({ home, hookScriptPath: `/ext/${STABLE_HOOK_FILENAME}` })).rejects.toThrow('无法解析')
+    expect(readFileSync(settings, 'utf8')).toBe(original)
+  })
+
+  it('settings.json 读取失败时, install 不包装成 JSON 解析错误', async () => {
+    const dir = join(home, '.claude')
+    mkdirSync(dir, { recursive: true })
+    mkdirSync(join(dir, 'settings.json'))
+
+    let error: unknown
+    try {
+      await installHook({ home, hookScriptPath: `/ext/${STABLE_HOOK_FILENAME}` })
+    } catch (e) {
+      error = e
+    }
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).not.toContain('无法解析')
+  })
+
   it('uninstall 仅移除含 ask-anytime-hook.js 的 entry, 保留用户已有 hooks', async () => {
     const dir = join(home, '.claude')
     mkdirSync(dir, { recursive: true })
@@ -73,6 +99,17 @@ describe('hookInstaller', () => {
     expect(cfg.hooks.SessionStart).toEqual([
       { hooks: [{ type: 'command', command: 'echo hi' }] },
     ])
+  })
+
+  it('settings.json 为坏 JSON 时, uninstall 报错且不覆盖原文件', async () => {
+    const dir = join(home, '.claude')
+    mkdirSync(dir, { recursive: true })
+    const settings = join(dir, 'settings.json')
+    const original = '{"hooks":'
+    writeFileSync(settings, original)
+
+    await expect(uninstallHook({ home })).rejects.toThrow('无法解析')
+    expect(readFileSync(settings, 'utf8')).toBe(original)
   })
 
   it('uninstall 也能识别旧扁平格式 (含 tag 或含 ask-anytime-hook.js 的 entry.command)', async () => {
@@ -112,6 +149,19 @@ describe('hookInstaller', () => {
     expect(await isHookInstalled({ home })).toBe(true)
   })
 
+  it('isHookInstalled 不把 ask-anytime-hook.js.bak 误判为本扩展 hook', async () => {
+    const dir = join(home, '.claude')
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({
+      hooks: {
+        SessionStart: [
+          { hooks: [{ type: 'command', command: `node "/OLD/${STABLE_HOOK_FILENAME}.bak"` }] },
+        ],
+      },
+    }))
+    expect(await isHookInstalled({ home })).toBe(false)
+  })
+
   it('copyHookScript: 把脚本复制到 ~/.claude/ask-anytime-hook.js', async () => {
     const src = join(home, 'src-hook.js')
     writeFileSync(src, '// fake hook\n')
@@ -133,6 +183,33 @@ describe('hookInstaller', () => {
     await installHook({ home, hookScriptPath: `/NEW/${STABLE_HOOK_FILENAME}` })
     expect(await isHookInstalledAtPath({ home, expectedScriptPath: `/NEW/${STABLE_HOOK_FILENAME}` })).toBe(true)
     expect(await isHookInstalledAtPath({ home, expectedScriptPath: `/OTHER/${STABLE_HOOK_FILENAME}` })).toBe(false)
+  })
+
+  it('isHookInstalledAtPath: 不把 ask-anytime-hook.js.bak 误判为稳定路径', async () => {
+    const dir = join(home, '.claude')
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({
+      hooks: {
+        SessionStart: [
+          { hooks: [{ type: 'command', command: `node "/NEW/${STABLE_HOOK_FILENAME}.bak"` }] },
+        ],
+      },
+    }))
+    expect(await isHookInstalledAtPath({ home, expectedScriptPath: `/NEW/${STABLE_HOOK_FILENAME}` })).toBe(false)
+  })
+
+  it('uninstall 不移除仅指向 ask-anytime-hook.js.bak 的用户 hook', async () => {
+    const dir = join(home, '.claude')
+    mkdirSync(dir, { recursive: true })
+    const hook = { hooks: [{ type: 'command', command: `node "/USER/${STABLE_HOOK_FILENAME}.bak"` }] }
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({
+      hooks: { SessionStart: [hook] },
+    }))
+
+    await uninstallHook({ home })
+
+    const cfg = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))
+    expect(cfg.hooks.SessionStart).toEqual([hook])
   })
 
   it('isHookInstalledAtPath: 旧扁平格式即使路径正确也返回 false (触发迁移)', async () => {

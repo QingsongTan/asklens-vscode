@@ -21,7 +21,7 @@ describe('ClaudeAdapter', () => {
     const adapter = new ClaudeAdapter({ apiKey: 'k', fetchFn })
     const chunks: string[] = []
     for await (const c of adapter.explain({
-      selectedText: 'x', conversation: [], followUps: [], modelId: 'claude-opus-4-7',
+      selectedText: 'x', conversation: [], followUps: [], modelId: 'claude-opus-4-8',
     })) chunks.push(c)
     expect(chunks.join('')).toBe('Hello')
   })

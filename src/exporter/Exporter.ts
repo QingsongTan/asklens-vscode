@@ -34,7 +34,7 @@ export function renderRaw(cards: AnnotationCard[], opts?: { now?: Date }): strin
   const sessionIds = new Set(cards.map((c) => c.sessionId))
 
   const out: string[] = []
-  out.push(`# Ask Anytime 知识导出 (${dateStr})`)
+  out.push(`# AskLens 知识导出 (${dateStr})`)
   out.push('')
   out.push(`> 共 ${cards.length} 张卡片, 来自 ${sessionIds.size} 个会话`)
   out.push('')

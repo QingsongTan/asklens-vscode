@@ -8,6 +8,16 @@ export type Session = { sessionId: string; transcriptPath: string; cwd: string }
 type Listener = (s: Session | null) => void
 type WatchFn = typeof watch
 
+function normalizeWorkspacePath(path: string): string {
+  const normalized = path.replace(/\\/g, '/')
+  const withoutTrailingSeparators = normalized.length > 1 ? normalized.replace(/\/+$/, '') : normalized
+  return process.platform === 'win32' ? withoutTrailingSeparators.toLowerCase() : withoutTrailingSeparators
+}
+
+function isSameWorkspace(a: string, b: string): boolean {
+  return normalizeWorkspacePath(a) === normalizeWorkspacePath(b)
+}
+
 export class SessionTracker {
   private current: Session | null = null
   private listeners: Listener[] = []
@@ -27,7 +37,7 @@ export class SessionTracker {
         if (file === null || file === '.ask_anytime_session.json') void this.refresh()
       })
     } catch (e) {
-      console.warn('[ask-anytime] 无法监听 .claude 目录, 会话感知将退化为仅启动时读取一次:', e)
+      console.warn('[asklens] 无法监听 .claude 目录, 会话感知将退化为仅启动时读取一次:', e)
     }
   }
 
@@ -60,7 +70,8 @@ export class SessionTracker {
         return null
       }
       if (!data.sessionId || !data.transcriptPath) return null
-      return { sessionId: data.sessionId, transcriptPath: data.transcriptPath, cwd: data.cwd ?? '' }
+      if (typeof data.cwd !== 'string' || !isSameWorkspace(data.cwd, this.opts.workspace)) return null
+      return { sessionId: data.sessionId, transcriptPath: data.transcriptPath, cwd: data.cwd }
     } catch {
       return null
     }

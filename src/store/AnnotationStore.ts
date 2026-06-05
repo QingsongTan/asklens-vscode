@@ -20,7 +20,7 @@ export type AnnotationCard = {
 
 type StoreShape = { [sessionId: string]: AnnotationCard[] }
 
-const KEY = 'ask-anytime.annotations.v1'
+const KEY = 'asklens.annotations.v1'
 
 export class AnnotationStore {
   private listeners: Array<(sid: string) => void> = []
@@ -76,6 +76,19 @@ export class AnnotationStore {
       const last = c.turns[c.turns.length - 1]
       if (last && last.role === 'ai') last.text += chunk
       else c.turns.push({ role: 'ai', text: chunk, ts: Date.now() })
+    })
+  }
+
+  prepareRetry(cardId: string): Promise<void> {
+    return this.mutate(cardId, (c) => {
+      delete c.error
+      const last = c.turns[c.turns.length - 1]
+      if (last && last.role === 'ai') {
+        last.text = ''
+        last.ts = Date.now()
+      } else {
+        c.turns.push({ role: 'ai', text: '', ts: Date.now() })
+      }
     })
   }
 

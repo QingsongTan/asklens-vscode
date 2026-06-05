@@ -18,13 +18,13 @@ export async function run(): Promise<void> {
     sessionId: 'sess1', cwd: '/tmp/ws', transcriptPath: transcript, updatedAt: Date.now(),
   }))
 
-  await vscode.extensions.getExtension('tanqs.ask-anytime')?.activate()
+  await vscode.extensions.getExtension('tanqs.asklens-for-claude-code')?.activate()
   const doc = await vscode.workspace.openTextDocument({ content: 'retry policy', language: 'plaintext' })
   const editor = await vscode.window.showTextDocument(doc)
   editor.selection = new vscode.Selection(0, 0, 0, 12)
-  await vscode.commands.executeCommand('ask-anytime.explainSelection')
+  await vscode.commands.executeCommand('asklens.explainSelection')
 
-  const ext = vscode.extensions.getExtension('tanqs.ask-anytime')!
+  const ext = vscode.extensions.getExtension('tanqs.asklens-for-claude-code')!
   const api = ext.exports as { store: import('../../src/store/AnnotationStore').AnnotationStore }
   try {
     // 轮询最多 5 秒, 等待卡片入 store

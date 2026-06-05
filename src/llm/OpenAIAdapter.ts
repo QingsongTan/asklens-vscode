@@ -11,7 +11,7 @@ export class OpenAIAdapter implements LLMAdapter {
 
   async *chat(messages: Message[], modelId: string): AsyncIterable<string> {
     const f = this.opts.fetchFn ?? fetch
-    const res = await f((this.opts.baseUrl ?? 'https://api.openai.com') + '/v1/chat/completions', {
+    const res = await f(buildChatCompletionsUrl(this.opts.baseUrl), {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -26,6 +26,12 @@ export class OpenAIAdapter implements LLMAdapter {
     if (!res.ok || !res.body) throw new Error(`OpenAI API ${res.status}`)
     yield* parseSse(res.body)
   }
+}
+
+function buildChatCompletionsUrl(baseUrl = 'https://api.openai.com'): string {
+  const normalized = baseUrl.replace(/\/+$/, '')
+  const apiBase = /\/v\d+$/i.test(normalized) ? normalized : `${normalized}/v1`
+  return `${apiBase}/chat/completions`
 }
 
 async function* parseSse(body: ReadableStream<Uint8Array>): AsyncIterable<string> {

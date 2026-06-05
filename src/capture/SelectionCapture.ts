@@ -21,7 +21,7 @@ export async function handleExplainSelection(d: SelectionDeps): Promise<void> {
     text = await d.readClipboard()
   }
   if (!text || text.trim() === '') {
-    d.showInfo('请先选中要解释的文字, 或在 Claude Code 回答里 Ctrl+C 复制后再触发')
+    d.showInfo('请先选中要解释的文字后按 Ctrl+Enter 触发')
     return
   }
   let sessionId: string
