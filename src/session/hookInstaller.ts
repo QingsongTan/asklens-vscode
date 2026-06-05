@@ -25,11 +25,13 @@ function settingsPath(home: string): { dir: string; file: string } {
 async function readSettings(home: string): Promise<Settings> {
   const { file } = settingsPath(home)
   if (!existsSync(file)) return {}
+  const content = await readFile(file, 'utf8')
   try {
-    return JSON.parse(await readFile(file, 'utf8'))
+    return JSON.parse(content)
   } catch (e) {
-    console.warn('[ask-anytime] 无法解析 ~/.claude/settings.json, 将以空配置覆盖写入(可能丢失用户配置):', e)
-    return {}
+    if (!(e instanceof SyntaxError)) throw e
+    const detail = e instanceof Error ? e.message : String(e)
+    throw new Error(`[ask-anytime] 无法解析 ~/.claude/settings.json, 已阻止写入以避免覆盖用户配置: ${detail}`)
   }
 }
 
@@ -40,11 +42,11 @@ async function writeSettings(home: string, s: Settings): Promise<void> {
 }
 
 function entryContainsOurScript(entry: HookEntry): boolean {
-  if (entry.hooks?.some((h) => typeof h.command === 'string' && h.command.includes(STABLE_HOOK_FILENAME))) {
+  if (entry.hooks?.some((h) => typeof h.command === 'string' && commandReferencesFilename(h.command, STABLE_HOOK_FILENAME))) {
     return true
   }
   // 旧扁平格式
-  if (typeof entry.command === 'string' && entry.command.includes(STABLE_HOOK_FILENAME)) return true
+  if (typeof entry.command === 'string' && commandReferencesFilename(entry.command, STABLE_HOOK_FILENAME)) return true
   if (entry.tag === HOOK_TAG) return true
   return false
 }
@@ -82,10 +84,38 @@ export async function copyHookScript(opts: { home: string; srcPath: string }): P
   await copyFile(opts.srcPath, getStableHookPath(opts.home))
 }
 
+function normalizeScriptPath(p: string): string {
+  const normalized = p.replace(/\\/g, '/')
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized
+}
+
+function unquoteToken(token: string): string {
+  if (token.length >= 2 && ((token[0] === '"' && token[token.length - 1] === '"') || (token[0] === "'" && token[token.length - 1] === "'"))) {
+    return token.slice(1, -1)
+  }
+  return token
+}
+
+function commandReferencesPath(command: string, expectedScriptPath: string): boolean {
+  const expected = normalizeScriptPath(expectedScriptPath)
+  const tokens = command.match(/"[^"]*"|'[^']*'|\S+/g) ?? []
+  return tokens.some((token) => normalizeScriptPath(unquoteToken(token)) === expected)
+}
+
+function commandReferencesFilename(command: string, expectedFilename: string): boolean {
+  const expected = normalizeScriptPath(expectedFilename)
+  const tokens = command.match(/"[^"]*"|'[^']*'|\S+/g) ?? []
+  return tokens.some((token) => {
+    const normalized = normalizeScriptPath(unquoteToken(token)).replace(/\/+$/, '')
+    const filename = normalized.slice(normalized.lastIndexOf('/') + 1)
+    return filename === expected
+  })
+}
+
 // 仅识别"新格式且命令指向期望路径"的条目, 旧扁平条目即使路径正确也返回 false, 触发 ensureHookInstalled 自动迁移
 export async function isHookInstalledAtPath(opts: { home: string; expectedScriptPath: string }): Promise<boolean> {
   const s = await readSettings(opts.home)
   return (s.hooks?.SessionStart ?? []).some((entry) =>
-    entry.hooks?.some((h) => typeof h.command === 'string' && h.command.includes(opts.expectedScriptPath)),
+    entry.hooks?.some((h) => typeof h.command === 'string' && commandReferencesPath(h.command, opts.expectedScriptPath)),
   )
 }

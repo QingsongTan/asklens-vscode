@@ -79,6 +79,19 @@ export class AnnotationStore {
     })
   }
 
+  prepareRetry(cardId: string): Promise<void> {
+    return this.mutate(cardId, (c) => {
+      delete c.error
+      const last = c.turns[c.turns.length - 1]
+      if (last && last.role === 'ai') {
+        last.text = ''
+        last.ts = Date.now()
+      } else {
+        c.turns.push({ role: 'ai', text: '', ts: Date.now() })
+      }
+    })
+  }
+
   finalizeCard(cardId: string): Promise<void> {
     return this.mutate(cardId, (c) => {
       c.explained = true

@@ -47,4 +47,51 @@ describe('OpenAIAdapter', () => {
     )) chunks.push(c)
     expect(chunks.join('')).toBe('ok')
   })
+
+  it('默认 OpenAI URL 请求 /v1/chat/completions', async () => {
+    let requestedUrl = ''
+    const fetchFn = async (url: string) => {
+      requestedUrl = url
+      return sseResponse(['data: [DONE]\n\n'])
+    }
+    const adapter = new OpenAIAdapter({ apiKey: 'k', fetchFn })
+
+    for await (const _ of adapter.chat([{ role: 'user', content: 'hi' }], 'gpt-4o')) {}
+
+    expect(requestedUrl).toBe('https://api.openai.com/v1/chat/completions')
+  })
+
+  it('baseUrl 已包含 /v1 时不重复追加版本路径', async () => {
+    let requestedUrl = ''
+    const fetchFn = async (url: string) => {
+      requestedUrl = url
+      return sseResponse(['data: [DONE]\n\n'])
+    }
+    const adapter = new OpenAIAdapter({
+      apiKey: 'k',
+      fetchFn,
+      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    })
+
+    for await (const _ of adapter.chat([{ role: 'user', content: 'hi' }], 'qwen-plus')) {}
+
+    expect(requestedUrl).toBe('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions')
+  })
+
+  it('baseUrl 不含版本路径时追加 /v1/chat/completions', async () => {
+    let requestedUrl = ''
+    const fetchFn = async (url: string) => {
+      requestedUrl = url
+      return sseResponse(['data: [DONE]\n\n'])
+    }
+    const adapter = new OpenAIAdapter({
+      apiKey: 'k',
+      fetchFn,
+      baseUrl: 'https://api.deepseek.com',
+    })
+
+    for await (const _ of adapter.chat([{ role: 'user', content: 'hi' }], 'deepseek-chat')) {}
+
+    expect(requestedUrl).toBe('https://api.deepseek.com/v1/chat/completions')
+  })
 })

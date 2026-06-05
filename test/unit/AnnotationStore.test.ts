@@ -65,6 +65,20 @@ describe('AnnotationStore', () => {
     expect(turns[2]).toMatchObject({ role: 'ai', text: '' })
   })
 
+  it('prepareRetry 清空失败 AI turn 和 error, 新 stream 不拼接旧片段', async () => {
+    const c = await store.create({ sessionId: 's1', selectedText: 'x' })
+    await store.appendStreamChunk(c.id, '旧失败片段')
+    await store.setError(c.id, '网络异常')
+
+    await store.prepareRetry(c.id)
+    await store.appendStreamChunk(c.id, '新回答')
+
+    const got = store.findCard(c.id)
+    expect(got?.error).toBeUndefined()
+    expect(got?.turns).toHaveLength(1)
+    expect(got?.turns[0]).toMatchObject({ role: 'ai', text: '新回答' })
+  })
+
   it('markResolved 切换 resolved', async () => {
     const c = await store.create({ sessionId: 's1', selectedText: 'x' })
     await store.markResolved(c.id, true)

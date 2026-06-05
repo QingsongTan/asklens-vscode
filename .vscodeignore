@@ -9,5 +9,6 @@ tsconfig.json
 .vscode/**
 docs/**
 *.vsix
+ask-anytime-knowledge-*.md
 node_modules/**
 .vscode-test/**

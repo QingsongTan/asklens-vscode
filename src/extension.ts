@@ -25,7 +25,7 @@ type ProviderPreset = {
 }
 
 const PROVIDER_PRESETS: ProviderPreset[] = [
-  { id: 'claude', label: 'Claude (Anthropic)', hint: 'sk-ant-...', models: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'] },
+  { id: 'claude', label: 'Claude (Anthropic)', hint: 'sk-ant-...', models: ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'] },
   { id: 'openai', label: 'OpenAI', hint: 'sk-...', models: ['gpt-4o', 'gpt-4.1', 'o3', 'o3-mini'] },
   { id: 'deepseek', label: 'DeepSeek', hint: 'sk-...', baseUrl: 'https://api.deepseek.com', models: ['deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-reasoner', 'deepseek-chat'] },
   { id: 'qwen', label: '通义千问 (Qwen, 阿里)', hint: 'sk-...', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: ['qwen3-max', 'qwen-plus', 'qwen-turbo', 'qwen3-coder-plus'] },
@@ -62,7 +62,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
   let tracker = new SessionTracker({ home, workspace: getCurrentWorkspace(), staleMs: 30_000 })
   await tracker.init()
 
-  void ensureHookInstalled(context, home)
+  void ensureHookInstalledOnStartup(context, home)
 
   let router = await buildRouter(context)
 
@@ -75,7 +75,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         await store.appendTurn(cardId, { role: 'user', text })
         await runExplain(cardId)
       },
-      onRetry: async (cardId) => { await runExplain(cardId) },
+      onRetry: async (cardId) => {
+        await store.prepareRetry(cardId)
+        await runExplain(cardId)
+      },
     },
   )
   context.subscriptions.push(
@@ -100,7 +103,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
   async function runExplain(cardId: string): Promise<void> {
     const cfg = vscode.workspace.getConfiguration('ask-anytime')
     const providerId = cfg.get<ProviderId>('provider', 'claude')
-    const modelId = cfg.get<string>('model', 'claude-opus-4-7')
+    const modelId = cfg.get<string>('model', 'claude-opus-4-8')
     const cur = tracker.getCurrentSession()
     const conversation = cur
       ? await buildContext(cur.transcriptPath, { maxTokens: 100_000 }).catch((e) => {
@@ -135,6 +138,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 
   context.subscriptions.push(
     vscode.commands.registerCommand('ask-anytime.explainSelection', async () => {
+      await vscode.commands.executeCommand('editor.action.clipboardCopyAction').catch(() => {})
+      await new Promise(r => setTimeout(r, 50))
       await handleExplainSelection({
         getSelection: () => {
           const ed = vscode.window.activeTextEditor
@@ -166,7 +171,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
         store,
         router,
         getProvider: () => cfg.get<ProviderId>('provider', 'claude'),
-        getModelId: () => cfg.get<string>('model', 'claude-opus-4-7'),
+        getModelId: () => cfg.get<string>('model', 'claude-opus-4-8'),
         getMaxTokens: () => 100_000,
       })
     }),
@@ -241,21 +246,43 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
   return { store, get tracker() { return tracker } }
 }
 
-async function ensureHookInstalled(context: vscode.ExtensionContext, home: string): Promise<void> {
-  // 1. 总是把最新版 hook 脚本复制到稳定路径 (相当于升级)
-  const srcPath = path.join(context.extensionPath, 'hook', 'write_session.js')
-  try {
-    await copyHookScript({ home, srcPath })
-  } catch (e) {
-    console.warn('[ask-anytime] 复制 hook 脚本到稳定路径失败:', e)
-  }
+const SETTINGS_PARSE_ERROR_MESSAGE =
+  'settings.json 无法解析，Ask Anytime 已跳过 hook 安装/更新且未修改该文件，仍可使用兜底会话感知。'
+const HOOK_INSTALL_ERROR_MESSAGE =
+  'Ask Anytime: hook 安装/更新失败，已停止本次 hook 安装/更新，仍可使用兜底会话感知。'
 
+export async function ensureHookInstalledOnStartup(context: vscode.ExtensionContext, home: string): Promise<void> {
+  try {
+    await ensureHookInstalled(context, home)
+  } catch (e) {
+    if (isSettingsParseError(e)) {
+      console.warn('[ask-anytime] 无法解析 ~/.claude/settings.json, 已跳过 hook 安装/更新:', e)
+      void vscode.window.showErrorMessage(SETTINGS_PARSE_ERROR_MESSAGE)
+      return
+    }
+    console.warn('[ask-anytime] 安装/更新 SessionStart hook 失败:', e)
+    void vscode.window.showErrorMessage(HOOK_INSTALL_ERROR_MESSAGE)
+  }
+}
+
+function isSettingsParseError(e: unknown): boolean {
+  return e instanceof Error && e.message.includes('无法解析 ~/.claude/settings.json')
+}
+
+async function ensureHookInstalled(context: vscode.ExtensionContext, home: string): Promise<void> {
   const stablePath = getStableHookPath(home)
 
-  // 2. 已装且路径正确 → 直接返回
-  if (await isHookInstalledAtPath({ home, expectedScriptPath: stablePath })) return
+  // 1. 先读取 settings.json; 坏 JSON 会在启动封装里阻止后续写入.
+  const installedAtStablePath = await isHookInstalledAtPath({ home, expectedScriptPath: stablePath })
 
-  // 3. 已装但路径不是稳定路径 (旧版本残留) → 静默卸载旧条目, 准备装新的
+  // 2. 总是把最新版 hook 脚本复制到稳定路径 (相当于升级)
+  const srcPath = path.join(context.extensionPath, 'hook', 'write_session.js')
+  await copyHookScript({ home, srcPath })
+
+  // 3. 已装且路径正确 → 直接返回
+  if (installedAtStablePath) return
+
+  // 4. 已装但路径不是稳定路径 (旧版本残留) → 静默卸载旧条目, 准备装新的
   if (await isHookInstalled({ home })) {
     await uninstallHook({ home })
     await installHook({ home, hookScriptPath: stablePath })
@@ -263,7 +290,7 @@ async function ensureHookInstalled(context: vscode.ExtensionContext, home: strin
     return
   }
 
-  // 4. 完全未装 → 询问用户是否安装
+  // 5. 完全未装 → 询问用户是否安装
   const choice = await vscode.window.showInformationMessage(
     'Ask Anytime 需要在 ~/.claude/settings.json 安装一个 SessionStart hook 才能精准感知 Claude Code 会话。是否同意安装?',
     '安装', '使用兜底方案(不安装)',

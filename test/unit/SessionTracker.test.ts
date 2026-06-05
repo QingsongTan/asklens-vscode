@@ -31,6 +31,35 @@ describe('SessionTracker', () => {
     expect(tracker.getCurrentSession()).toMatchObject({ sessionId: 'hook-sid' })
   })
 
+  it('hook cwd 与当前 workspace 不匹配时忽略 hook', async () => {
+    writeFileSync(join(home, '.claude', '.ask_anytime_session.json'), JSON.stringify({
+      sessionId: 'other-sid',
+      transcriptPath: '/other/other-sid.jsonl',
+      cwd: '/other',
+      updatedAt: Date.now(),
+    }))
+
+    tracker = new SessionTracker({ home, workspace: '/p', staleMs: 30_000 })
+    await tracker.init()
+    expect(tracker.getCurrentSession()).toBeNull()
+  })
+
+  it('hook cwd 不匹配时, 用当前 workspace 的 mtime jsonl 兜底', async () => {
+    writeFileSync(join(home, '.claude', '.ask_anytime_session.json'), JSON.stringify({
+      sessionId: 'other-sid',
+      transcriptPath: '/other/other-sid.jsonl',
+      cwd: '/other',
+      updatedAt: Date.now(),
+    }))
+    const dir = join(projectsDir, '-p')
+    mkdirSync(dir)
+    writeFileSync(join(dir, 'fallback.jsonl'), '')
+
+    tracker = new SessionTracker({ home, workspace: '/p', staleMs: 30_000 })
+    await tracker.init()
+    expect(tracker.getCurrentSession()?.sessionId).toBe('fallback')
+  })
+
   it('hook 文件过期时, 用 mtime 最新的 jsonl 兜底', async () => {
     const dir = join(projectsDir, '-p')
     mkdirSync(dir)
