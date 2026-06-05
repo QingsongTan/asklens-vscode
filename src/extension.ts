@@ -66,6 +66,43 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 
   let router = await buildRouter(context)
 
+  async function runOnboarding(): Promise<void> {
+    for (const p of KEYED_PROVIDERS) {
+      if (await context.secrets.get(SECRET_KEYS[p.id])) return
+    }
+    const action = await vscode.window.showInformationMessage(
+      'Ask Anytime 已安装！请配置 AI Provider 开始使用。',
+      '立即配置', '稍后配置',
+    )
+    if (action !== '立即配置') return
+
+    const allProviders = PROVIDER_PRESETS.map((p) => ({ label: p.label, value: p.id, hint: p.hint ?? 'sk-...', isOllama: p.id === 'ollama' }))
+    const providerPick = await vscode.window.showQuickPick(allProviders, {
+      title: 'Ask Anytime 配置向导（1/2）：选择 AI Provider',
+    })
+    if (!providerPick) return
+
+    const cfg = vscode.workspace.getConfiguration('ask-anytime')
+    await cfg.update('provider', providerPick.value, vscode.ConfigurationTarget.Global)
+
+    if (!providerPick.isOllama) {
+      const key = await vscode.window.showInputBox({
+        title: `Ask Anytime 配置向导（2/2）：输入 ${providerPick.label} API key`,
+        placeHolder: providerPick.hint,
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (v) => (v.trim().length === 0 ? '不能为空' : null),
+      })
+      if (!key) return
+      await context.secrets.store(SECRET_KEYS[providerPick.value as keyof typeof SECRET_KEYS], key.trim())
+    }
+
+    router = await buildRouter(context)
+    void vscode.window.showInformationMessage('Ask Anytime：配置完成！选中文字后 Ctrl+C 复制，再按 Ctrl+Enter 开始使用。')
+  }
+
+  void runOnboarding()
+
   const provider = new AnnotationViewProvider(
     context.extensionUri,
     store,
@@ -138,7 +175,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{ stor
 
   context.subscriptions.push(
     vscode.commands.registerCommand('ask-anytime.explainSelection', async () => {
-      await vscode.commands.executeCommand('editor.action.clipboardCopyAction').catch(() => {})
+      await Promise.resolve(vscode.commands.executeCommand('editor.action.clipboardCopyAction')).catch(() => {})
       await new Promise(r => setTimeout(r, 50))
       await handleExplainSelection({
         getSelection: () => {

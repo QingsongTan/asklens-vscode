@@ -4,6 +4,14 @@
   "description": "在 Claude Code 回答里选中文字, 一键获得结合会话上下文的 AI 解释",
   "version": "0.0.6",
   "publisher": "tanqs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/QingsongTan/ask-anytime-vscode"
+  },
+  "homepage": "https://github.com/QingsongTan/ask-anytime-vscode#readme",
+  "bugs": {
+    "url": "https://github.com/QingsongTan/ask-anytime-vscode/issues"
+  },
   "engines": { "vscode": "^1.95.0" },
   "main": "./dist/extension.js",
   "activationEvents": ["onStartupFinished"],
@@ -49,6 +57,11 @@
           "type": "string",
           "default": "https://api.deepseek.com",
           "description": "DeepSeek API 基地址, 走中转/镜像时改这里"
+        },
+        "ask-anytime.obsidianVaultPath": {
+          "type": "string",
+          "default": "",
+          "description": "Obsidian Vault 根目录路径，导出知识文档后自动写入原子笔记。留空则每次导出时弹窗选择。"
         }
       }
     }

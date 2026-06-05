@@ -4,6 +4,7 @@ import type { AnnotationStore, AnnotationCard } from '../store/AnnotationStore'
 import type { LLMRouter } from '../llm/LLMRouter'
 import type { ProviderId } from '../llm/types'
 import { renderRaw, renderArticle, estimateArticleTokens } from './Exporter'
+import { exportToObsidian } from './ObsidianExporter'
 
 export interface ExportDeps {
   store: AnnotationStore
@@ -130,4 +131,44 @@ export async function handleExportKnowledge(deps: ExportDeps): Promise<void> {
   void vscode.window.showInformationMessage(
     `Ask Anytime: 已导出 ${selectedCards.length} 张卡片到 ${fileUri.fsPath}`,
   )
+
+  // (6) 自动同步到 Obsidian Vault
+  await syncToObsidian(fileUri.fsPath)
+}
+
+async function syncToObsidian(exportedFilePath: string): Promise<void> {
+  const confirm = await vscode.window.showInformationMessage(
+    'Ask Anytime: 是否同步到 Obsidian？',
+    '同步', '跳过',
+  )
+  if (confirm !== '同步') return
+
+  const cfg = vscode.workspace.getConfiguration('ask-anytime')
+  let vaultPath = cfg.get<string>('obsidianVaultPath', '')
+
+  if (!vaultPath) {
+    const picked = await vscode.window.showOpenDialog({
+      canSelectFiles: false,
+      canSelectFolders: true,
+      canSelectMany: false,
+      title: 'Ask Anytime: 选择 Obsidian Vault 文件夹（仅需配置一次）',
+      openLabel: '选择此 Vault',
+    })
+    if (!picked || picked.length === 0) return
+    vaultPath = picked[0].fsPath
+    await cfg.update('obsidianVaultPath', vaultPath, vscode.ConfigurationTarget.Global)
+  }
+
+  try {
+    const { noteCount, outputDir } = await exportToObsidian(exportedFilePath, vaultPath)
+    if (noteCount > 0) {
+      void vscode.window.showInformationMessage(
+        `Ask Anytime: 已同步 ${noteCount} 个笔记到 Obsidian → ${outputDir}`,
+      )
+    }
+  } catch (e) {
+    void vscode.window.showWarningMessage(
+      `Ask Anytime: Obsidian 同步失败 — ${(e as Error).message}`,
+    )
+  }
 }
